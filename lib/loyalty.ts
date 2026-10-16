@@ -28,6 +28,11 @@ export function istMonthStart(ms: number) {
   return Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), 1) - IST_OFFSET_MS;
 }
 
+export function istYearStart(ms: number) {
+  const shifted = istDate(ms);
+  return Date.UTC(shifted.getUTCFullYear(), 0, 1) - IST_OFFSET_MS;
+}
+
 /** Monday 00:00 IST for the week that contains `ms`, as a UTC millisecond timestamp. */
 export function weekStartMonday(ms: number) {
   const shifted = istDate(ms);
@@ -46,6 +51,17 @@ export function weekKey(ms: number) {
   const month = String(start.getUTCMonth() + 1).padStart(2, "0");
   const day = String(start.getUTCDate()).padStart(2, "0");
   return `${start.getUTCFullYear()}-${month}-${day}`;
+}
+
+export function millisOf(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (value && typeof value === "object" && "toMillis" in value && typeof (value as { toMillis: () => number }).toMillis === "function") {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+  if (value && typeof value === "object" && "seconds" in value) {
+    return Number((value as { seconds: number }).seconds) * 1000;
+  }
+  return 0;
 }
 
 export function istDayStart(ms: number) {
