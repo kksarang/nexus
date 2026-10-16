@@ -45,9 +45,9 @@ export function AdminDesk() {
             </button>
           ) : (
             <p className="text-sm leading-relaxed text-mist">
-              Analytics stay on this page for staff. Players use{" "}
+              Analytics stay on this page for staff. Players see their card at the counter.{" "}
               <Link href="/player" className="text-cyan">
-                their own card
+                How points work
               </Link>
               .
             </p>

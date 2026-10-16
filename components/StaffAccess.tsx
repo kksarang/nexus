@@ -1,25 +1,55 @@
 "use client";
 
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  isSignInWithEmailLink,
+  onAuthStateChanged,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  signOut,
+} from "firebase/auth";
 import { useState, useSyncExternalStore } from "react";
 import { firebaseConfig, firebaseServices } from "@/lib/firebaseClient";
 import { staffProfile } from "@/lib/loyaltyApi";
+
+const EMAIL_KEY = "nexus-staff-email";
 
 export type StaffSnap = {
   configured: boolean;
   uid: string;
   email: string;
   role: string;
-  status: "off" | "out" | "pending" | "staff" | "denied";
+  status: "off" | "out" | "link" | "pending" | "staff" | "denied";
 };
 
 const signedOut: StaffSnap = { configured: true, uid: "", email: "", role: "", status: "out" };
 const unconfigured: StaffSnap = { configured: false, uid: "", email: "", role: "", status: "off" };
 let staffSnap: StaffSnap = signedOut;
+let linkAttempt: Promise<void> | null = null;
 
 function publish(next: StaffSnap, notify: () => void) {
   staffSnap = next;
   notify();
+}
+
+function completeEmailLink(notify: () => void) {
+  const services = firebaseServices();
+  if (!services || !isSignInWithEmailLink(services.auth, window.location.href)) return;
+  const email = window.localStorage.getItem(EMAIL_KEY);
+  if (!email) {
+    publish({ ...signedOut, status: "link" }, notify);
+    return;
+  }
+  if (!linkAttempt) {
+    linkAttempt = signInWithEmailLink(services.auth, email, window.location.href)
+      .then(() => {
+        window.localStorage.removeItem(EMAIL_KEY);
+        window.history.replaceState({}, "", window.location.pathname);
+      })
+      .catch(() => {
+        linkAttempt = null;
+        publish({ ...signedOut, status: "link" }, notify);
+      });
+  }
 }
 
 function subscribe(notify: () => void) {
@@ -28,8 +58,10 @@ function subscribe(notify: () => void) {
     staffSnap = unconfigured;
     return () => {};
   }
+  completeEmailLink(notify);
   return onAuthStateChanged(services.auth, (user) => {
     if (!user) {
+      if (staffSnap.status === "link") return;
       publish({ ...signedOut }, notify);
       return;
     }
@@ -62,12 +94,22 @@ export function useStaff() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+function authMessage(reason: unknown) {
+  const code = typeof reason === "object" && reason && "code" in reason ? String(reason.code) : "";
+  if (code === "auth/operation-not-allowed") {
+    return "In Firebase Authentication, turn on Email link (passwordless sign-in).";
+  }
+  if (code === "auth/invalid-email") return "Enter a valid staff email.";
+  if (code === "auth/invalid-action-code") return "That sign-in link has expired. Request a new one.";
+  return "The sign-in email could not be sent.";
+}
+
 export function StaffSignIn() {
   const staff = useStaff();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   if (!staff.configured) {
     return (
@@ -107,6 +149,8 @@ export function StaffSignIn() {
     );
   }
 
+  const finishing = staff.status === "link";
+
   return (
     <form
       className="grid gap-3 rounded-2xl border border-white/10 bg-navy p-4"
@@ -114,16 +158,32 @@ export function StaffSignIn() {
         event.preventDefault();
         const services = firebaseServices();
         if (!services) return;
+        const address = email.trim();
         setPending(true);
         setError("");
-        void signInWithEmailAndPassword(services.auth, email.trim(), password)
-          .catch((reason: unknown) => {
-            setError(reason instanceof Error ? "That staff email or password was not accepted." : "Sign-in failed.");
-          })
+        const task = finishing
+          ? signInWithEmailLink(services.auth, address, window.location.href).then(() => {
+              window.localStorage.removeItem(EMAIL_KEY);
+              window.history.replaceState({}, "", window.location.pathname);
+            })
+          : sendSignInLinkToEmail(services.auth, address, {
+              url: `${window.location.origin}${window.location.pathname}`,
+              handleCodeInApp: true,
+            }).then(() => {
+              window.localStorage.setItem(EMAIL_KEY, address);
+              setSent(true);
+            });
+        void task
+          .catch((reason: unknown) => setError(authMessage(reason)))
           .finally(() => setPending(false));
       }}
     >
       <p className="font-tech text-[0.62rem] tracking-[0.2em] text-cyan uppercase">Staff sign in</p>
+      <p className="text-sm text-mist">
+        {finishing
+          ? "Open the link on this browser, or enter the same email to finish."
+          : "Enter your staff email. Firebase sends a sign-in link. No password."}
+      </p>
       <label className="block">
         <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Email</span>
         <input
@@ -131,24 +191,14 @@ export function StaffSignIn() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className="desk-input mt-2"
-          autoComplete="username"
+          autoComplete="email"
           required
         />
       </label>
-      <label className="block">
-        <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Password</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="desk-input mt-2"
-          autoComplete="current-password"
-          required
-        />
-      </label>
+      {sent ? <p className="text-sm text-cyan">Check that inbox and open the link on this device.</p> : null}
       {error ? <p className="text-sm text-magenta">{error}</p> : null}
       <button type="submit" className="btn btn-primary" disabled={pending}>
-        {pending ? "Signing in" : "Sign in"}
+        {pending ? "Please wait" : finishing ? "Finish sign in" : "Email me a link"}
       </button>
     </form>
   );

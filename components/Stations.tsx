@@ -4,10 +4,7 @@ import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
 import { SectionIntro } from "@/components/SectionIntro";
 import { formatRupees } from "@/lib/format";
-import { rates, stations } from "@/lib/site";
-
-const stationRate = rates.find((rate) => rate.key === "station");
-const roomRate = rates.find((rate) => rate.key === "private");
+import { rateForStation, stations } from "@/lib/site";
 
 function PriceTag({ rupees, unit }: { rupees: number | null | undefined; unit?: string }) {
   if (rupees == null) {
@@ -47,7 +44,7 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                 </Link>
               }
             >
-              Five new PS5 consoles on the main floor and one in the private room. Choose a station
+              Four PS5 stations, one car simulator, and the private room. Choose a station
               when you book and we keep it ready for you.
             </SectionIntro>
           </div>
@@ -66,14 +63,19 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                   style={{ objectPosition: station.objectPosition }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/10 to-transparent" />
-                <span className="absolute top-4 left-4 chip">Main floor</span>
+                <span className={`absolute top-4 left-4 chip ${station.rate === "simulator" ? "border-[#D6FF3F]/50 text-[#D6FF3F]" : ""}`}>
+                  {station.rate === "simulator" ? "Car simulator" : "Main floor"}
+                </span>
                 <span className="absolute right-4 bottom-3 font-tech text-5xl text-white/90">{station.id}</span>
               </div>
               <div className="p-6">
                 <h3 className="text-2xl tracking-wide text-paper uppercase">{station.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-mist">{station.summary}</p>
                 <ul className="mt-4 space-y-1.5 text-sm text-paper/90">
-                  {["New PlayStation 5", "Full game library", "Book by the hour"].map((perk) => (
+                  {(station.rate === "simulator"
+                    ? ["Car simulator", "₹180 an hour", "Book by the hour"]
+                    : ["New PlayStation 5", "Full game library", "Book by the hour"]
+                  ).map((perk) => (
                     <li key={perk} className="flex items-center gap-2">
                       <Check size={14} className="text-cyan" aria-hidden="true" />
                       {perk}
@@ -81,7 +83,7 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                   ))}
                 </ul>
                 <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={stationRate?.rupees} unit={stationRate?.unit} />
+                  <PriceTag rupees={rateForStation(station.id).rupees} unit={rateForStation(station.id).unit} />
                   <BookButton station={station.id} className="min-h-10 px-4">
                     Book
                   </BookButton>
@@ -116,7 +118,7 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                   ))}
                 </ul>
                 <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={roomRate?.rupees} unit={roomRate?.unit} />
+                  <PriceTag rupees={rateForStation(room.id).rupees} unit={rateForStation(room.id).unit} />
                   <Link href="/private-room" className="btn btn-primary min-h-10 px-4">
                     Explore
                   </Link>

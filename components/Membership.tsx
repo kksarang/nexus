@@ -19,8 +19,8 @@ export function Membership() {
             </>
           }
         >
-          A main-floor session is {formatRupees(160)} an hour if you walk in. This plan brings it to{" "}
-          {formatRupees(each)} a session.
+          A PS5 station is {formatRupees(160)} an hour if you walk in. This plan brings Stations 01 to 04
+          to {formatRupees(each)} a session. The car simulator stays {formatRupees(180)} an hour.
         </SectionIntro>
 
         <article className="panel panel-featured mt-12 grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[auto_1fr_auto]">

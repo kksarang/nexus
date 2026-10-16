@@ -119,7 +119,7 @@ export function LoyaltyDesk({
         <p className="text-xs leading-relaxed text-mist">
           One point for every 60 paid minutes. Ten points from Monday to Sunday unlocks 30 free minutes.{" "}
           <Link href="/player" className="text-cyan">
-            Players check their own card
+            How points work
           </Link>
           {" · "}
           <Link href="/admin" className="text-cyan">

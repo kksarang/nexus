@@ -9,12 +9,6 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
     }
 
-    function ownsPhone() {
-      return signedIn()
-        && request.auth.token.phone_number != null
-        && resource.data.phoneE164 == request.auth.token.phone_number;
-    }
-
     match /staff/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list: if isStaff();
@@ -22,8 +16,7 @@ service cloud.firestore {
     }
 
     match /phones/{phone} {
-      allow get: if isStaff()
-        || (signedIn() && request.auth.token.phone_number == "+91" + phone);
+      allow get: if isStaff();
       allow list: if false;
       allow create: if isStaff()
         && request.resource.data.customerId is string
@@ -32,17 +25,13 @@ service cloud.firestore {
     }
 
     match /customers/{customerId} {
-      allow get: if isStaff()
-        || (signedIn()
-          && request.auth.token.phone_number != null
-          && resource.data.phoneE164 == request.auth.token.phone_number);
-      allow list: if isStaff();
+      allow get, list: if isStaff();
       allow create, update: if isStaff();
       allow delete: if false;
     }
 
     match /sessions/{sessionId} {
-      allow read: if isStaff() || ownsPhone();
+      allow read: if isStaff();
       allow create: if isStaff()
         && request.resource.data.startedAt is number
         && request.resource.data.endedAt is number
@@ -57,15 +46,13 @@ service cloud.firestore {
     }
 
     match /weeklyProgress/{id} {
-      allow get: if isStaff() || ownsPhone() || (signedIn() && resource == null);
-      allow list: if isStaff();
+      allow read: if isStaff();
       allow create, update: if isStaff();
       allow delete: if false;
     }
 
     match /pointsLedger/{id} {
-      allow read: if isStaff() || ownsPhone();
-      allow create: if isStaff();
+      allow read, create: if isStaff();
       allow update, delete: if false;
     }
 

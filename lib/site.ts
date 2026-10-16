@@ -47,8 +47,15 @@ export const rates: {
   {
     key: "station",
     label: "PS5 station",
-    detail: "Stations 01 to 05 on the main floor.",
+    detail: "Stations 01 to 04 on the main floor.",
     rupees: 160,
+    unit: "per hour",
+  },
+  {
+    key: "simulator",
+    label: "Car simulator",
+    detail: "Station 05. The driving simulator on the main floor.",
+    rupees: 180,
     unit: "per hour",
   },
   {
@@ -62,7 +69,7 @@ export const rates: {
   {
     key: "monthly",
     label: "Monthly plan",
-    detail: "20 sessions on the main floor. ₹100 a session instead of ₹160.",
+    detail: "20 sessions on Stations 01 to 04. ₹100 a session instead of ₹160.",
     rupees: 2000,
     unit: "for 20 sessions",
   },
@@ -74,10 +81,10 @@ export const memberships = [
   {
     key: "monthly",
     tier: "Monthly",
-    fit: "20 sessions on Stations 01 to 05. The private room stays at its hourly rate.",
+    fit: "20 sessions on Stations 01 to 04. The car simulator and private room stay at their hourly rates.",
     rupees: 2000,
     sessions: 20,
-    perks: ["20 sessions in the month", "₹100 a session instead of ₹160", "Any main-floor station"],
+    perks: ["20 sessions in the month", "₹100 a session instead of ₹160", "Stations 01 to 04"],
     featured: true,
   },
 ] as const;
@@ -150,6 +157,7 @@ export const stations = [
     id: "01",
     name: "PlayStation 01",
     privateRoom: false,
+    rate: "station",
     image: "/images/ps5-console.jpg",
     alt: "PlayStation 5 console and controller on a dark desk",
     objectPosition: "center",
@@ -159,6 +167,7 @@ export const stations = [
     id: "02",
     name: "PlayStation 02",
     privateRoom: false,
+    rate: "station",
     image: "/images/hero-lounge.jpg",
     alt: "A wide screen and PlayStation 5 in a dark lounge",
     objectPosition: "center",
@@ -168,6 +177,7 @@ export const stations = [
     id: "03",
     name: "PlayStation 03",
     privateRoom: false,
+    rate: "station",
     image: "/images/controller-glow.jpg",
     alt: "A controller lit in cyan and purple",
     objectPosition: "center",
@@ -177,6 +187,7 @@ export const stations = [
     id: "04",
     name: "PlayStation 04",
     privateRoom: false,
+    rate: "station",
     image: "/images/hero-lounge.jpg",
     alt: "Screen light across a dark gaming desk",
     objectPosition: "72% center",
@@ -184,23 +195,30 @@ export const stations = [
   },
   {
     id: "05",
-    name: "PlayStation 05",
+    name: "Car Simulator",
     privateRoom: false,
-    image: "/images/crew-session.jpg",
-    alt: "Two people seated together in front of a large screen",
+    rate: "simulator",
+    image: "/images/games/game-racing.jpg",
+    alt: "A car on a track with lime light trails",
     objectPosition: "center",
-    summary: "A new PS5 station for friends to play side by side.",
+    summary: "The car simulator on the main floor.",
   },
   {
     id: "06",
     name: "Private Room",
     privateRoom: true,
+    rate: "private",
     image: "/images/private-room.jpg",
     alt: "Private gaming room with a PlayStation 5, a large screen, and two chairs",
     objectPosition: "center",
     summary: "The dedicated private-room console. A more personal session on a new PS5.",
   },
 ] as const;
+
+export function rateForStation(id: string) {
+  const station = stations.find((item) => item.id === id);
+  return rates.find((rate) => rate.key === station?.rate) ?? rates[0];
+}
 
 export const gallery = [
   { src: "/images/hero-lounge.jpg", alt: "The lounge in low light with a console and screen", tag: "Lounge", wide: true },

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default function RoomPage() {
   const floor = rates.find((rate) => rate.key === "station");
+  const simulator = rates.find((rate) => rate.key === "simulator");
   const room = rates.find((rate) => rate.key === "private");
 
   return (
@@ -26,11 +27,17 @@ export default function RoomPage() {
                 persons, amount.
               </h1>
             </div>
-            <dl className="grid grid-cols-2 gap-3">
+            <dl className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-cyan/40 bg-cyan/10 px-4 py-3">
-                <dt className="text-[0.62rem] tracking-[0.16em] text-cyan uppercase">Floor</dt>
+                <dt className="text-[0.62rem] tracking-[0.16em] text-cyan uppercase">PS5</dt>
                 <dd className="mt-1 font-tech text-3xl text-paper">
                   {floor?.rupees != null ? formatRupees(floor.rupees) : "—"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-[#D6FF3F]/40 bg-[#D6FF3F]/10 px-4 py-3">
+                <dt className="text-[0.62rem] tracking-[0.16em] text-[#D6FF3F] uppercase">Car sim</dt>
+                <dd className="mt-1 font-tech text-3xl text-paper">
+                  {simulator?.rupees != null ? formatRupees(simulator.rupees) : "—"}
                 </dd>
               </div>
               <div className="rounded-2xl border border-magenta/40 bg-magenta/10 px-4 py-3">

@@ -1,4 +1,4 @@
-import { BadgePercent, CalendarClock, Clock, Crown } from "lucide-react";
+import { BadgePercent, CalendarClock, Car, Clock, Crown } from "lucide-react";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
@@ -6,7 +6,7 @@ import { SectionIntro } from "@/components/SectionIntro";
 import { formatRupees } from "@/lib/format";
 import { messages, offers, rates } from "@/lib/site";
 
-const icons = { station: Clock, private: Crown, monthly: CalendarClock } as const;
+const icons = { station: Clock, simulator: Car, private: Crown, monthly: CalendarClock } as const;
 
 export function Pricing({ heading = true }: { heading?: boolean }) {
   return (
@@ -26,11 +26,11 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            ₹160 an hour on the floor, ₹200 an hour in the private room, or ₹2,000 for 20 sessions.
+            ₹160 an hour on a PS5, ₹180 on the car simulator, ₹200 in the private room, or ₹2,000 for 20 PS5 sessions.
           </SectionIntro>
         ) : null}
 
-        <div className={`${heading ? "mt-12" : ""} grid gap-5 md:grid-cols-3`}>
+        <div className={`${heading ? "mt-12" : ""} grid gap-5 md:grid-cols-2 xl:grid-cols-4`}>
           {rates.map((rate) => {
             const Icon = icons[rate.key as keyof typeof icons] ?? Clock;
             return (
@@ -67,7 +67,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
                   </Link>
                 ) : (
                   <BookButton
-                    station={rate.key === "private" ? "06" : undefined}
+                    station={rate.key === "private" ? "06" : rate.key === "simulator" ? "05" : undefined}
                     variant={rate.featured ? "primary" : "secondary"}
                     className="mt-6 w-full"
                   >

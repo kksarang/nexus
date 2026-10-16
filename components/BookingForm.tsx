@@ -3,7 +3,7 @@
 import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
 import { formatRupees } from "@/lib/format";
-import { memberships, rates, site, stations, whatsappLink } from "@/lib/site";
+import { memberships, rateForStation, site, stations, whatsappLink } from "@/lib/site";
 
 type Mode = "station" | "membership";
 
@@ -111,7 +111,7 @@ export function BookingForm() {
         ? "Any available station"
         : `${stations.find((item) => item.id === station)?.name ?? station} (Station ${station})`;
     const hourCount = hours.includes("+") ? null : Number.parseInt(hours, 10);
-    const rate = rates.find((item) => item.key === (station === "06" ? "private" : "station"));
+    const rate = rateForStation(station === "any" ? "01" : station);
     const amountLine =
       rate?.rupees != null && hourCount
         ? `Amount: ${formatRupees(rate.rupees * hourCount)} (${formatRupees(rate.rupees)} per hour × ${hourCount})`
@@ -278,7 +278,7 @@ export function BookingForm() {
                 {[{ id: "any", label: "Any", sub: "First free" }, ...stations.map((item) => ({
                   id: item.id,
                   label: item.id,
-                  sub: item.privateRoom ? "Private" : "Floor",
+                  sub: item.rate === "simulator" ? "Car sim" : item.privateRoom ? "Private" : "Floor",
                 }))].map((option) => (
                   <label
                     key={option.id}

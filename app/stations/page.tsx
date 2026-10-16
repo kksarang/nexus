@@ -7,7 +7,7 @@ import { Stations } from "@/components/Stations";
 export const metadata: Metadata = {
   title: "PS5 Stations in Panoor",
   description:
-    "Six new PS5 console stations at Nexus Playzone, Panoor: five on the main floor and one dedicated private gaming room.",
+    "Four PS5 stations, a car simulator, and a private room at Nexus Playzone, Panoor.",
   alternates: { canonical: "/stations" },
 };
 
@@ -18,7 +18,7 @@ export default function StationsPage() {
         eyebrow="Our stations"
         title={
           <>
-            Six PS5 stations. <span className="text-gradient">One for you.</span>
+            Four PS5 stations. <span className="text-gradient">One car simulator.</span>
           </>
         }
         image="/images/ps5-console.jpg"
@@ -29,8 +29,8 @@ export default function StationsPage() {
           </>
         }
       >
-        Stations 01 to 05 sit on the main floor. Station 06 is the private room. Every one runs a new
-        PlayStation 5 with the full game library.
+        Stations 01 to 04 are PS5 consoles at ₹160 an hour. Station 05 is the car simulator at ₹180
+        an hour. Station 06 is the private room.
       </PageHero>
       <Stations heading={false} />
     </main>

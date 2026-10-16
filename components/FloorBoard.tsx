@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
 import type { FinishedPlay } from "@/lib/loyalty";
-import { rates, stations } from "@/lib/site";
+import { rateForStation, stations } from "@/lib/site";
 
 type Session = {
   name: string;
@@ -400,7 +400,7 @@ function Desk({
   const running = Boolean(session && !complete);
   const total = session ? session.hours * 60 * 60 * 1000 : 1;
   const progress = running ? Math.min(1, Math.max(0, remaining / total)) : complete ? 0 : 1;
-  const hourly = rates.find((item) => item.key === (privateRoom ? "private" : "station"));
+  const hourly = rateForStation(stationId);
   const bookedHours = session?.hours ?? draft.hours;
   const extraMinutes = session?.extraMinutes ?? 0;
   const extraCost = hourly?.rupees != null ? Math.round((extraMinutes / 60) * hourly.rupees) : 0;
@@ -707,7 +707,7 @@ function ConsoleWall({
           const complete = Boolean(session && now > 0 && remaining <= 0);
           const running = Boolean(session && !complete);
           const tone = item.privateRoom ? "#FF4D6D" : rails[index % rails.length];
-          const hourly = rates.find((rate) => rate.key === (item.privateRoom ? "private" : "station"));
+          const hourly = rateForStation(item.id);
           const hours = session?.hours ?? draft.hours;
           const extraMinutes = session?.extraMinutes ?? 0;
           const rate = hourly?.rupees ?? 0;
@@ -722,7 +722,7 @@ function ConsoleWall({
             >
               <div className="console-rail">
                 <strong>{item.id}</strong>
-                <span>{item.privateRoom ? "Room" : "Floor"}</span>
+                <span>{item.rate === "simulator" ? "Sim" : item.privateRoom ? "Room" : "Floor"}</span>
               </div>
               <div className="min-w-0 p-4">
                 <div className="flex items-start justify-between gap-3">
