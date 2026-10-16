@@ -32,14 +32,16 @@ function app(): FirebaseApp | null {
   return getApps().length ? getApp() : initializeApp(config);
 }
 
+const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || "default";
+
 let database: Firestore | null = null;
 
 function firestore(firebaseApp: FirebaseApp) {
   if (database) return database;
   try {
-    database = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
+    database = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, databaseId);
   } catch {
-    database = getFirestore(firebaseApp);
+    database = getFirestore(firebaseApp, databaseId);
   }
   return database;
 }
