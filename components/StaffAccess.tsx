@@ -107,7 +107,7 @@ export function authMessage(reason: unknown) {
   }
   if (code === "auth/invalid-email") return "Enter a valid staff email.";
   if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found" || code === "auth/invalid-login-credentials") {
-    return "That email or password was not accepted.";
+    return "Sign-in failed. That email or password is incorrect.";
   }
   if (code === "auth/too-many-requests") return "Too many attempts. Wait a moment and try again.";
   if (code === "auth/invalid-action-code") return "That sign-in link has expired. Request a new one.";

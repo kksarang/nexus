@@ -78,15 +78,28 @@ export function AdminLogin() {
               </button>
             </span>
           </label>
-          {staff.status === "denied" ? (
-            <p className="text-sm text-magenta">
-              Signed in as {staff.email || "this account"}, but Firestore has no staff/{staff.uid} record. Access stays closed until an admin document exists.
+          {error ? (
+            <p className="rounded-xl border border-magenta/40 bg-magenta/10 px-3 py-2 text-sm text-magenta" role="alert">
+              {error}
             </p>
           ) : null}
-          {staff.status === "pending" ? <p className="text-sm text-mist">Checking the staff record…</p> : null}
-          {error ? <p className="text-sm text-magenta" role="alert">{error}</p> : null}
-          <button type="submit" className="btn btn-primary" disabled={pending || staff.status === "pending"}>
-            {pending || staff.status === "pending" ? "Signing in…" : "Sign In"}
+          {!error && staff.status === "denied" ? (
+            <p className="rounded-xl border border-magenta/40 bg-magenta/10 px-3 py-2 text-sm text-magenta" role="alert">
+              Sign-in failed. The password was accepted, but Firestore has no readable staff/{staff.uid} record. If that document already exists, open Firestore, then Rules, and click Publish.
+            </p>
+          ) : null}
+          {!error && staff.status === "pending" ? (
+            <p className="rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan" role="status">
+              Password accepted. Checking the staff record…
+            </p>
+          ) : null}
+          {!error && staff.status === "staff" ? (
+            <p className="rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan" role="status">
+              Signed in. Opening the desk.
+            </p>
+          ) : null}
+          <button type="submit" className="btn btn-primary" disabled={pending}>
+            {pending ? "Signing in…" : "Sign In"}
           </button>
         </form>
 
