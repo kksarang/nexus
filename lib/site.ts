@@ -26,7 +26,7 @@ export const messages = {
   book: "Hi Nexus Playzone, I would like to book a PS5 session in Panoor. Please share what is available.",
   room: "Hi Nexus Playzone, I would like to book the private gaming room. Please share what is available.",
   pricing: "Hi Nexus Playzone, could you share your current hourly rates, group packages, and offers?",
-  membership: "Hi Nexus Playzone, I would like to know about monthly membership plans.",
+  membership: "Hi Nexus Playzone, I would like to know about the monthly, quarterly, and yearly membership plans.",
   games: "Hi Nexus Playzone, could you share the full list of games available right now?",
 } as const;
 
@@ -65,13 +65,6 @@ export const rates: {
     rupees: 200,
     unit: "per hour",
     featured: true,
-  },
-  {
-    key: "monthly",
-    label: "Monthly plan",
-    detail: "20 sessions on Stations 01 to 04. ₹100 a session instead of ₹160.",
-    rupees: 2000,
-    unit: "for 20 sessions",
   },
 ];
 

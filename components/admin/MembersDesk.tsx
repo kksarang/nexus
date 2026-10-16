@@ -283,7 +283,6 @@ function MemberDetail({ item, now, editable, onChanged }: { item: Membership; no
 
 export function MembersDesk() {
   const desk = useDesk();
-  const prices = useLivePrices();
   const [rows, setRows] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

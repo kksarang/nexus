@@ -1256,7 +1256,7 @@ function ConsoleWall({
                       </label>
                     ) : null}
                     {draft.useReward && memberCovered ? (
-                      <p className="text-sm text-magenta">Use either the monthly membership or the free 30 minutes.</p>
+                      <p className="text-sm text-magenta">Use either the membership or the free 30 minutes.</p>
                     ) : null}
                     {memberCovered && !draft.useReward ? (
                       <p className="rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan">
