@@ -6,7 +6,7 @@ import { PageHero } from "@/components/PageHero";
 export const metadata: Metadata = {
   title: "PS5 Game Library",
   description:
-    "Play the latest EA Sports FC, WWE 2K, GTA V, Marvel’s Spider-Man 2, Star Wars: Galactic Racer, and Ghost of Yōtei on PS5 at Nexus Playzone, Panoor.",
+    "Play the latest PS5 games at Nexus Playzone, a gaming station in Panoor for Thalassery and Kannur.",
   alternates: { canonical: "/games" },
 };
 

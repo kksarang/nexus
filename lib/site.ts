@@ -11,7 +11,7 @@ export const site = {
     "https://www.google.com/maps/dir/?api=1&destination=Nexus+Playzone+Panoor+Kannur+Kerala",
   mapEmbed: "https://www.google.com/maps?q=Nexus+Playzone+Panoor+Kannur+Kerala&output=embed",
   description:
-    "Experience next-generation PS5 gaming at Nexus Playzone, Panoor, Kannur. Explore six console stations, a dedicated private gaming room, and a new way to play with friends.",
+    "Nexus Playzone is a PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six consoles, a private room, and the latest games for a proper game experience.",
 } as const;
 
 export function getSiteUrl() {

@@ -15,7 +15,7 @@ export function Location({ heading = true }: { heading?: boolean }) {
               </>
             }
           >
-            Drop in, say hi, and grab a controller. Message ahead to make sure your station is free.
+            Nexus Playzone is in Panoor, Kannur, a short trip from Thalassery. Message ahead to make sure your station is free.
           </SectionIntro>
         ) : null}
 

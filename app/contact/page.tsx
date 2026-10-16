@@ -5,7 +5,7 @@ import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Call, WhatsApp, or email Nexus Playzone in Panoor, Kannur.",
+  description: "Call or WhatsApp Nexus Playzone, the PS5 gaming station in Panoor, Kannur, near Thalassery.",
   alternates: { canonical: "/contact" },
 };
 

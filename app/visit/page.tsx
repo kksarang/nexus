@@ -7,7 +7,7 @@ import { PageHero } from "@/components/PageHero";
 export const metadata: Metadata = {
   title: "Visit Us in Panoor",
   description:
-    "Find Nexus Playzone in Panoor, Kannur. Map, directions, phone, WhatsApp, email, and opening hours.",
+    "Find the Nexus Playzone PS5 gaming station in Panoor, Kannur, near Thalassery. Map, phone, and WhatsApp.",
   alternates: { canonical: "/visit" },
 };
 

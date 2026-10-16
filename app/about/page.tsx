@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About Us",
-  description: "Nexus Playzone is a premium PS5 lounge in Panoor, Kannur, founded by Adarsh, Sarang, and Vishnu.",
+  description: "Nexus Playzone is a PS5 gaming station in Panoor, Kannur, near Thalassery, founded by Vishnu, Sarang, and Adarsh.",
   alternates: { canonical: "/about" },
 };
 

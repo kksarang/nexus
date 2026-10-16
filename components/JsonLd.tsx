@@ -18,7 +18,7 @@ export function JsonLd() {
       addressRegion: "Kerala",
       addressCountry: "IN",
     },
-    areaServed: ["Panoor", "Kannur"],
+    areaServed: ["Panoor", "Thalassery", "Kannur"],
     hasMap: site.maps,
     founder: founders.map((founder) => ({
       "@type": "Person",

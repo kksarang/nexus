@@ -26,7 +26,7 @@ const barlow = Barlow_Condensed({
   display: "swap",
 });
 
-const title = "Nexus Playzone | Premium PS5 Gaming Station in Panoor, Kannur";
+const title = "Nexus Playzone | PS5 Gaming Station in Panoor, Thalassery and Kannur";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -38,12 +38,12 @@ export const metadata: Metadata = {
   applicationName: site.name,
   keywords: [
     "Nexus Playzone",
-    "gaming station in Panoor",
-    "PS5 gaming in Panoor",
-    "gaming station in Kannur",
-    "PlayStation gaming in Kannur",
+    "PS5 gaming station in Panoor",
+    "gaming station in Thalassery",
+    "PS5 gaming in Thalassery",
+    "game station in Kannur",
+    "Panoor gaming",
     "private gaming room in Panoor",
-    "gaming zone in Panoor",
   ],
   openGraph: {
     type: "website",

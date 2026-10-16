@@ -16,7 +16,7 @@ export function Hero() {
             Level up your game.
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-mist sm:text-lg">
-            Your squad. Your favourite games. An unforgettable gaming experience at Nexus Playzone, Panoor.
+            A PS5 gaming station in Panoor for Thalassery and Kannur. Six consoles, a private room, and a real game experience with your people.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <BookButton className="w-full sm:w-auto">Book Your Session</BookButton>

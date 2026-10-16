@@ -9,7 +9,7 @@ import { Stations } from "@/components/Stations";
 export const metadata: Metadata = {
   title: "PS5 Stations in Panoor",
   description:
-    "Four PS5 stations, a car simulator, and a private room at Nexus Playzone, Panoor.",
+    "PS5 stations, a car simulator, and a private room at Nexus Playzone in Panoor, for Thalassery and Kannur.",
   alternates: { canonical: "/stations" },
 };
 

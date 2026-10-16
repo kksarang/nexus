@@ -26,6 +26,9 @@ export function WhyNexus() {
         <h2 className="mt-3 max-w-2xl text-4xl tracking-wide text-paper uppercase sm:text-5xl">
           The setup, the room, and the session.
         </h2>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-mist sm:text-base">
+          Nexus Playzone is the PS5 game station in Panoor, Kannur. Players from Thalassery come for football, wrestling, open-world, and racing on the latest games, on the main floor or in the private room.
+        </p>
         <ul className="mt-10 grid gap-8 md:grid-cols-3">
           {points.map((point) => {
             const Icon = point.icon;

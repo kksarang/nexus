@@ -16,7 +16,7 @@ import { WhyNexus } from "@/components/WhyNexus";
 
 export const metadata: Metadata = {
   description:
-    "PS5 gaming in Panoor, Kannur. Six consoles, a private gaming room, and WhatsApp booking at Nexus Playzone.",
+    "PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six consoles, a private room, and WhatsApp booking at Nexus Playzone.",
   alternates: { canonical: "/" },
 };
 
