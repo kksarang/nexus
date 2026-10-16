@@ -7,7 +7,7 @@ import {
   type WeekRow,
 } from "@/lib/adminStats";
 import { firebaseServices } from "@/lib/firebaseClient";
-import { istYearStart, millisOf, weekKey } from "@/lib/loyalty";
+import { istYearStart, millisOf, normalizePhone, phoneE164, weekKey } from "@/lib/loyalty";
 import { stations } from "@/lib/site";
 
 function requireDb() {
@@ -208,6 +208,73 @@ export async function renamePlayer(playerId: string, name: string) {
       customerId: playerId,
       before: String(snap.data().name ?? ""),
       after: clean,
+      by: user.uid,
+      at: serverTimestamp(),
+    });
+  });
+}
+
+export async function addPlayer(name: string, rawPhone: string) {
+  const clean = name.trim();
+  const phone = normalizePhone(rawPhone);
+  if (!clean) throw new Error("Add the player's name.");
+  if (!phone) throw new Error("Enter a 10-digit mobile number.");
+  const { db, user } = requireDb();
+  const customerRef = doc(collection(db, "customers"));
+  await runTransaction(db, async (tx) => {
+    const phoneRef = doc(db, "phones", phone);
+    const phoneSnap = await tx.get(phoneRef);
+    if (phoneSnap.exists()) throw new Error("A player with that mobile number already exists.");
+    tx.set(phoneRef, { customerId: customerRef.id, phoneE164: phoneE164(phone) });
+    tx.set(customerRef, {
+      name: clean,
+      phone,
+      phoneE164: phoneE164(phone),
+      lifetimeMinutes: 0,
+      lifetimePoints: 0,
+      bankedMinutes: 0,
+      createdAt: serverTimestamp(),
+      consentAt: serverTimestamp(),
+      createdBy: user.uid,
+    });
+    tx.set(doc(collection(db, "auditLogs")), {
+      type: "register",
+      customerId: customerRef.id,
+      after: { name: clean, phone },
+      by: user.uid,
+      at: serverTimestamp(),
+    });
+  });
+  return customerRef.id;
+}
+
+export async function updatePlayer(playerId: string, name: string, rawPhone: string) {
+  const clean = name.trim();
+  const phone = normalizePhone(rawPhone);
+  if (!clean) throw new Error("Add the player's name.");
+  if (!phone) throw new Error("Enter a 10-digit mobile number.");
+  const { db, user } = requireDb();
+  await runTransaction(db, async (tx) => {
+    const ref = doc(db, "customers", playerId);
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error("That player was not found.");
+    const before = { name: String(snap.data().name ?? ""), phone: String(snap.data().phone ?? "") };
+    const phoneChanged = phone !== before.phone;
+    const phoneRef = doc(db, "phones", phone);
+    if (phoneChanged) {
+      const phoneSnap = await tx.get(phoneRef);
+      if (phoneSnap.exists() && String(phoneSnap.data().customerId ?? "") !== playerId) {
+        throw new Error("That mobile number already belongs to another player.");
+      }
+      if (!phoneSnap.exists()) tx.set(phoneRef, { customerId: playerId, phoneE164: phoneE164(phone) });
+    }
+    if (!phoneChanged && clean === before.name) return;
+    tx.update(ref, { name: clean, phone, phoneE164: phoneE164(phone) });
+    tx.set(doc(collection(db, "auditLogs")), {
+      type: "edit",
+      customerId: playerId,
+      before,
+      after: { name: clean, phone },
       by: user.uid,
       at: serverTimestamp(),
     });

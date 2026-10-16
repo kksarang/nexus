@@ -1,10 +1,14 @@
 "use client";
 
+import { Pencil, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DeskNote } from "@/components/admin/RangeBar";
 import { useDesk } from "@/components/admin/AdminShell";
+import { addPlayer, updatePlayer } from "@/lib/adminApi";
 import { downloadCsv, formatIst, hoursLabel, playerKind, type OpsPlayer } from "@/lib/adminStats";
+
+type Editing = { id: string | null; name: string; phone: string };
 
 const filters = ["all", "new", "regular", "inactive", "frequent"] as const;
 const sorts = [
@@ -22,7 +26,33 @@ export function PlayersDesk() {
   const [registeredFrom, setRegisteredFrom] = useState("");
   const [registeredTo, setRegisteredTo] = useState("");
   const [page, setPage] = useState(0);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
   const needle = query.trim().toLowerCase();
+
+  function openForm(next: Editing) {
+    setEditing(next);
+    setFormError("");
+    setNotice("");
+  }
+
+  function save() {
+    if (!editing) return;
+    const current = editing;
+    setSaving(true);
+    setFormError("");
+    const task = current.id ? updatePlayer(current.id, current.name, current.phone) : addPlayer(current.name, current.phone);
+    void task
+      .then(() => {
+        setNotice(current.id ? `${current.name.trim()} was updated.` : `${current.name.trim()} was added.`);
+        setEditing(null);
+        desk.reload();
+      })
+      .catch((reason: unknown) => setFormError(reason instanceof Error ? reason.message : "The player could not be saved."))
+      .finally(() => setSaving(false));
+  }
   const phoneNeedle = query.replace(/\D/g, "");
 
   const visible = useMemo(() => {
@@ -51,10 +81,70 @@ export function PlayersDesk() {
 
   return (
     <div className="grid gap-5">
-      <div>
-        <h1 className="text-4xl tracking-wide text-paper uppercase">Players</h1>
-        <p className="mt-2 text-sm text-mist">Available points are the lifetime balance. Weekly rewards do not reduce that balance.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl tracking-wide text-paper uppercase">Players</h1>
+          <p className="mt-2 text-sm text-mist">Available points are the lifetime balance. Weekly rewards do not reduce that balance.</p>
+        </div>
+        {desk.canOperate ? (
+          <button type="button" className="btn btn-primary" onClick={() => openForm({ id: null, name: "", phone: "" })}>
+            <UserPlus size={16} aria-hidden="true" />
+            Add player
+          </button>
+        ) : null}
       </div>
+      {notice ? (
+        <p className="rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan" role="status">{notice}</p>
+      ) : null}
+      {editing ? (
+        <form
+          className="grid gap-4 rounded-2xl border border-cyan/30 bg-[#0d1322] p-5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            save();
+          }}
+        >
+          <h2 className="text-2xl tracking-wide text-paper uppercase">{editing.id ? "Edit player" : "Add player"}</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm text-mist">
+              Name
+              <input
+                value={editing.name}
+                onChange={(event) => setEditing({ ...editing, name: event.target.value })}
+                className="desk-input mt-1"
+                autoComplete="off"
+                required
+              />
+            </label>
+            <label className="text-sm text-mist">
+              Mobile number
+              <input
+                value={editing.phone}
+                onChange={(event) => setEditing({ ...editing, phone: event.target.value })}
+                className="desk-input mt-1"
+                inputMode="numeric"
+                placeholder="98765 43210"
+                autoComplete="off"
+                required
+              />
+            </label>
+          </div>
+          {editing.id ? (
+            <p className="text-xs text-mist">Points, hours, and session history stay with this player when the name or number changes.</p>
+          ) : null}
+          {formError ? (
+            <p className="rounded-xl border border-magenta/40 bg-magenta/10 px-3 py-2 text-sm text-magenta" role="alert">{formError}</p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? "Saving…" : editing.id ? "Save changes" : "Add player"}
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={saving} onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
       <DeskNote />
       <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
         <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} className="desk-input" placeholder="Search name or mobile" />
@@ -88,11 +178,11 @@ export function PlayersDesk() {
         </button>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-white/10">
-        <table className="w-full min-w-[68rem] text-left text-sm">
+        <table className="w-full min-w-[72rem] text-left text-sm">
           <thead className="bg-[#101624] text-[0.62rem] tracking-[0.12em] text-mist uppercase">
             <tr>
-              {["Player", "Mobile", "Registered", "Hours", "Sessions", "Week", "Month", "Year", "Available", "Rewards", "Last played"].map((heading) => (
-                <th key={heading} className="px-3 py-3 font-medium">{heading}</th>
+              {["Player", "Mobile", "Registered", "Hours", "Sessions", "Week", "Month", "Year", "Available", "Rewards", "Last played", ""].map((heading, index) => (
+                <th key={heading || `col-${index}`} className="px-3 py-3 font-medium">{heading}</th>
               ))}
             </tr>
           </thead>
@@ -110,9 +200,28 @@ export function PlayersDesk() {
                 <td className="px-3 py-3 font-tech">{player.lifetimePoints}</td>
                 <td className="px-3 py-3">{player.rewardsRedeemed}</td>
                 <td className="px-3 py-3 text-mist">{formatIst(player.lastPlayedAt)}</td>
+                <td className="px-3 py-3 text-right">
+                  {desk.canOperate ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50 hover:text-cyan"
+                      onClick={() => {
+                        openForm({ id: player.id, name: player.name, phone: player.phone });
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      <Pencil size={13} aria-hidden="true" />
+                      Edit
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             )) : (
-              <tr><td colSpan={11} className="px-3 py-6 text-mist">No players match these filters.</td></tr>
+              <tr>
+                <td colSpan={12} className="px-3 py-6 text-mist">
+                  {desk.data?.players.length ? "No players match these filters." : "No players yet. Use Add player to register the first one."}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
