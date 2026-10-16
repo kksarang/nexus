@@ -9,16 +9,37 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
     }
 
+    function staffRole() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isStaff() && staffRole() == "admin";
+    }
+
+    function canOperate() {
+      return isStaff() && staffRole() != "manager";
+    }
+
+    function fairPoints() {
+      return request.resource.data.paidMinutes is int
+        && request.resource.data.paidMinutes >= 0
+        && request.resource.data.paidMinutes <= int((request.resource.data.endedAt - request.resource.data.startedAt) / 60000)
+        && request.resource.data.points is int
+        && request.resource.data.points >= 0
+        && request.resource.data.points <= int(request.resource.data.paidMinutes / 60) + 1;
+    }
+
     match /staff/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
-      allow list: if isStaff();
+      allow list: if isAdmin();
       allow write: if false;
     }
 
     match /phones/{phone} {
       allow get: if isStaff();
       allow list: if false;
-      allow create: if isStaff()
+      allow create: if canOperate()
         && request.resource.data.customerId is string
         && request.resource.data.phoneE164 == "+91" + phone;
       allow update, delete: if false;
@@ -26,39 +47,57 @@ service cloud.firestore {
 
     match /customers/{customerId} {
       allow get, list: if isStaff();
-      allow create, update: if isStaff();
+      allow create, update: if canOperate();
       allow delete: if false;
     }
 
     match /sessions/{sessionId} {
       allow read: if isStaff();
-      allow create: if isStaff()
-        && request.resource.data.startedAt is number
-        && request.resource.data.endedAt is number
+      allow create: if canOperate() && (
+        (request.resource.data.status == "active"
+          && request.resource.data.points == 0
+          && request.resource.data.paidMinutes == 0
+          && request.resource.data.startedAt is number
+          && request.resource.data.endedAt == request.resource.data.startedAt)
+        || (request.resource.data.status == "completed"
+          && request.resource.data.startedAt is number
+          && request.resource.data.endedAt is number
+          && request.resource.data.endedAt >= request.resource.data.startedAt
+          && fairPoints())
+      );
+      allow update: if canOperate()
+        && (resource.data.status == "active" || resource.data.paidMinutes == 0)
+        && request.resource.data.status == "completed"
+        && request.resource.data.startedAt == resource.data.startedAt
+        && request.resource.data.stationId == resource.data.stationId
         && request.resource.data.endedAt >= request.resource.data.startedAt
-        && request.resource.data.paidMinutes is int
-        && request.resource.data.paidMinutes >= 0
-        && request.resource.data.paidMinutes <= int((request.resource.data.endedAt - request.resource.data.startedAt) / 60000)
-        && request.resource.data.points is int
-        && request.resource.data.points >= 0
-        && request.resource.data.points <= int(request.resource.data.paidMinutes / 60) + 1;
-      allow update, delete: if false;
+        && fairPoints();
+      allow delete: if false;
     }
 
     match /weeklyProgress/{id} {
       allow read: if isStaff();
-      allow create, update: if isStaff();
+      allow create, update: if canOperate();
       allow delete: if false;
     }
 
     match /pointsLedger/{id} {
-      allow read, create: if isStaff();
+      allow read: if isStaff();
+      allow create: if canOperate();
       allow update, delete: if false;
     }
 
     match /auditLogs/{id} {
-      allow read, create: if isStaff();
+      allow read: if isStaff();
+      allow create: if canOperate();
       allow update, delete: if false;
+    }
+
+    match /stations/{stationId} {
+      allow read: if isStaff();
+      allow create, update: if canOperate()
+        && request.resource.data.status in ["available", "unavailable"];
+      allow delete: if false;
     }
 
     match /settings/{id} {
