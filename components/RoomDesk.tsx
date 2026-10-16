@@ -2,20 +2,23 @@
 
 import { CheckCircle2, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { FloorBoard, type DeskCustomer } from "@/components/FloorBoard";
 import { useDesk } from "@/components/admin/AdminShell";
 import {
+  extendLiveSession,
   findCustomer,
   openLiveSession,
   recordPaidSession,
   redeemReward,
   registerCustomer,
+  subscribeActiveSessions,
   type CustomerProfile,
+  type LiveTimer,
 } from "@/lib/loyaltyApi";
 import { normalizePhone, WEEKLY_TARGET } from "@/lib/loyalty";
 import { currentMembership, formatDay, sessionsLeft, spendSessions, type Membership } from "@/lib/membershipApi";
-import { markStationBusy, releaseStationAfterSession } from "@/lib/stationStatus";
+import { markStationBusy, releaseStationAfterSession, subscribeStationStatus } from "@/lib/stationStatus";
 
 function CustomerLookup({
   customers,
@@ -261,6 +264,30 @@ export function RoomDesk() {
   const [membership, setMembership] = useState<Membership | null>(null);
   const [useMember, setUseMember] = useState(true);
   const [result, setResult] = useState("");
+  const [remoteSessions, setRemoteSessions] = useState<LiveTimer[]>([]);
+  const [timersReady, setTimersReady] = useState(false);
+  const [stationUntil, setStationUntil] = useState<Record<string, number | null>>({});
+
+  useEffect(() => {
+    return subscribeActiveSessions(
+      (rows) => {
+        setRemoteSessions(rows);
+        setTimersReady(true);
+      },
+      () => {
+        setTimersReady(true);
+        setResult("Open sessions could not be loaded. Refresh this page before starting a timer.");
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    return subscribeStationStatus((entries) => {
+      const next: Record<string, number | null> = {};
+      for (const [id, entry] of Object.entries(entries)) next[id] = entry.status === "busy" ? entry.until : null;
+      setStationUntil(next);
+    }, () => undefined);
+  }, []);
   const customers: DeskCustomer[] = (desk.data?.players ?? [])
     .map((player) => ({ id: player.id, name: player.name, phone: player.phone }))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
@@ -295,6 +322,9 @@ export function RoomDesk() {
         customers={customers}
         customersLoading={desk.loading && customers.length === 0}
         readOnly={!desk.canEdit("gaming")}
+        timersReady={timersReady}
+        remoteSessions={remoteSessions}
+        stationUntil={stationUntil}
         onLookupMembership={async (customerId) => {
           const found = await currentMembership(customerId);
           if (!found) return null;
@@ -321,16 +351,21 @@ export function RoomDesk() {
               });
           }
         }}
-        onExtend={(stationId, endsAt) => {
-          void markStationBusy(stationId, endsAt).catch(() => undefined);
+        onExtend={(play) => {
+          void markStationBusy(play.stationId, play.endsAt).catch(() => undefined);
+          void extendLiveSession(play).catch((reason: unknown) => {
+            const code = typeof reason === "object" && reason && "code" in reason ? String((reason as { code: string }).code) : "";
+            if (code === "permission-denied") return;
+            setResult(reason instanceof Error ? reason.message : "The extra 15 minutes is on screen, but it was not saved yet.");
+          });
         }}
         onFinish={(play) => {
           void releaseStationAfterSession(play.stationId).catch(() => undefined);
           void recordPaidSession(play)
             .then(async (text) => {
               const money = play.collectedRupees
-                ? ` ₹${play.collectedRupees.toLocaleString("en-IN")} added to today's revenue.`
-                : " No amount was typed, so today's revenue did not change.";
+                ? ` ₹${play.collectedRupees.toLocaleString("en-IN")} added to ${play.name} and to today's revenue.`
+                : ` No rupees were added. Points still follow the time played when ${play.name} has a mobile number.`;
               setResult(`${text}${money}`);
               desk.reload();
               if (!normalizePhone(play.phone)) return;

@@ -107,13 +107,29 @@ service cloud.firestore {
           && request.resource.data.endedAt >= request.resource.data.startedAt
           && fairPoints())
       );
-      allow update: if canEdit("gaming")
-        && (resource.data.status == "active" || resource.data.paidMinutes == 0)
-        && request.resource.data.status == "completed"
-        && request.resource.data.startedAt == resource.data.startedAt
-        && request.resource.data.stationId == resource.data.stationId
-        && request.resource.data.endedAt >= request.resource.data.startedAt
-        && fairPoints();
+      allow update: if canEdit("gaming") && (
+        (
+          resource.data.status == "active"
+          && request.resource.data.status == "active"
+          && request.resource.data.startedAt == resource.data.startedAt
+          && request.resource.data.stationId == resource.data.stationId
+          && request.resource.data.paidMinutes == 0
+          && request.resource.data.points == 0
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["endsAt", "bookedMinutes", "extraMinutes"])
+          && request.resource.data.endsAt is number
+          && request.resource.data.endsAt >= resource.data.startedAt
+          && request.resource.data.bookedMinutes is int
+          && request.resource.data.extraMinutes is int
+        )
+        || (
+          (resource.data.status == "active" || resource.data.paidMinutes == 0)
+          && request.resource.data.status == "completed"
+          && request.resource.data.startedAt == resource.data.startedAt
+          && request.resource.data.stationId == resource.data.stationId
+          && request.resource.data.endedAt >= request.resource.data.startedAt
+          && fairPoints()
+        )
+      );
       allow delete: if false;
     }
 

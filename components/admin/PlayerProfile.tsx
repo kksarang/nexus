@@ -52,6 +52,7 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
           ["Paid hours", `${hoursLabel(player.lifetimeMinutes)} h`],
           ["Sessions", String(player.sessionCount)],
           ["Available points", String(player.lifetimePoints)],
+          ["Amount paid", `₹${sessions.reduce((total, session) => total + (session.amountRecorded ? session.amountRupees : 0), 0).toLocaleString("en-IN")}`],
           ["Rewards used", String(player.rewardsRedeemed)],
           ["This week", String(player.weekPoints)],
           ["This month", String(player.monthPoints)],

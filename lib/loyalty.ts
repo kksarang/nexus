@@ -70,6 +70,34 @@ export function istDayStart(ms: number) {
 }
 
 /** First `bookedMinutes` of the session count as paid. Minutes are split if they cross Monday 00:00 IST. */
+/** Minutes on the clock, rounded up so any started minute is billed. An exact minute stays exact. */
+export function usedMinutes(startedAt: number, endedAt: number) {
+  const ms = Math.max(0, endedAt - startedAt);
+  if (ms === 0) return 0;
+  return Math.ceil(ms / 60000);
+}
+
+/**
+ * Bill the minutes actually played.
+ * Leaving early charges only the time used, not the full booking.
+ * Staying past the booking, including +15 minutes, charges that extra time too.
+ * A membership covers the booked plan. Only time past that plan is charged.
+ */
+export function chargeForSession(input: {
+  hourlyRupees: number;
+  startedAt: number;
+  endedAt: number;
+  planMinutes: number;
+  member: boolean;
+}) {
+  const used = usedMinutes(input.startedAt, input.endedAt);
+  const plan = Math.max(0, Math.round(input.planMinutes));
+  const billable = input.member ? Math.max(0, used - plan) : used;
+  const rate = Number.isFinite(input.hourlyRupees) ? input.hourlyRupees : 0;
+  const amount = rate > 0 ? Math.round((billable / 60) * rate) : 0;
+  return { usedMinutes: used, billableMinutes: billable, amount };
+}
+
 export function allocatePaidMinutes(startedAt: number, endedAt: number, bookedMinutes: number) {
   const elapsed = Math.max(0, Math.floor((endedAt - startedAt) / 60000));
   const paid = Math.min(elapsed, Math.max(0, Math.floor(bookedMinutes)));

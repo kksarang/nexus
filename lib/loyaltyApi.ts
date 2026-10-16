@@ -5,6 +5,7 @@ import {
   getDocFromServer,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   runTransaction,
@@ -133,9 +134,11 @@ async function closeWithoutPoints(play: FinishedPlay, paidMinutes: number) {
   const status = String(existing.data()?.status ?? "");
   const previousPaid = Number(existing.data()?.paidMinutes ?? 0);
   if (existing.exists() && (status === "completed" || (status !== "active" && previousPaid > 0))) return;
+  const phone = normalizePhone(play.phone);
+  const payment = paymentOf(play);
   const record = {
     name: play.name.trim() || "Player",
-    phone: normalizePhone(play.phone),
+    phone,
     stationId: play.stationId,
     stationName: play.stationName,
     startedAt: play.startedAt,
@@ -143,14 +146,78 @@ async function closeWithoutPoints(play: FinishedPlay, paidMinutes: number) {
     bookedMinutes: play.bookedMinutes,
     paidMinutes,
     points: 0,
-    amountRupees: paymentOf(play).amountRupees,
-    paymentRecorded: paymentOf(play).paymentRecorded,
+    amountRupees: payment.amountRupees,
+    paymentRecorded: payment.paymentRecorded,
     status: "completed",
-    complimentary: !normalizePhone(play.phone),
+    complimentary: !phone,
     by: user.uid,
   };
   if (existing.exists()) await updateDoc(sessionRef, record);
   else await setDoc(sessionRef, record);
+  if (!phone || payment.amountRupees <= 0) return;
+  const phoneSnap = await getDoc(doc(db, "phones", phone));
+  if (!phoneSnap.exists()) return;
+  const customerRef = doc(db, "customers", String(phoneSnap.data().customerId ?? ""));
+  const customerSnap = await getDoc(customerRef);
+  if (!customerSnap.exists()) return;
+  await updateDoc(customerRef, {
+    lifetimeRupees: Number(customerSnap.data().lifetimeRupees ?? 0) + payment.amountRupees,
+  });
+}
+
+export type LiveTimer = {
+  stationId: string;
+  name: string;
+  phone: string;
+  note: string;
+  players: number;
+  planMinutes: number;
+  startedAt: number;
+  endsAt: number;
+  extraMinutes: number;
+  member: boolean;
+};
+
+function asLiveTimer(data: Record<string, unknown>): LiveTimer | null {
+  const stationId = String(data.stationId ?? "");
+  const startedAt = Number(data.startedAt ?? 0);
+  if (!stationId || !startedAt || String(data.status ?? "") !== "active") return null;
+  const extraMinutes = Math.max(0, Math.round(Number(data.extraMinutes ?? 0)));
+  const bookedMinutes = Math.max(0, Math.round(Number(data.bookedMinutes ?? 0)));
+  const planMinutes = Math.max(0, Math.round(Number(data.planMinutes ?? bookedMinutes - extraMinutes)));
+  const endsAt = Number(data.endsAt ?? 0) || startedAt + (planMinutes + extraMinutes) * 60 * 1000;
+  return {
+    stationId,
+    name: String(data.name ?? "Player"),
+    phone: String(data.phone ?? ""),
+    note: String(data.note ?? ""),
+    players: Math.max(1, Math.round(Number(data.players ?? 2))),
+    planMinutes,
+    startedAt,
+    endsAt,
+    extraMinutes,
+    member: data.member === true,
+  };
+}
+
+export function subscribeActiveSessions(onChange: (sessions: LiveTimer[]) => void, onError: () => void) {
+  const services = firebaseServices();
+  if (!services) {
+    onError();
+    return () => undefined;
+  }
+  return onSnapshot(
+    query(collection(services.db, "sessions"), where("status", "==", "active"), limit(30)),
+    (snap) => {
+      const rows: LiveTimer[] = [];
+      snap.forEach((item) => {
+        const row = asLiveTimer(item.data() as Record<string, unknown>);
+        if (row) rows.push(row);
+      });
+      onChange(rows);
+    },
+    () => onError(),
+  );
 }
 
 export async function openLiveSession(play: {
@@ -160,11 +227,16 @@ export async function openLiveSession(play: {
   phone: string;
   startedAt: number;
   bookedMinutes: number;
+  planMinutes?: number;
+  players?: number;
+  note?: string;
+  member?: boolean;
 }) {
   const services = firebaseServices();
   const user = services?.auth.currentUser;
   if (!services || !user) return;
   const phone = normalizePhone(play.phone);
+  const planMinutes = Math.max(0, Math.round(play.planMinutes ?? play.bookedMinutes));
   await setDoc(doc(services.db, "sessions", `${play.stationId}_${play.startedAt}`), {
     status: "active",
     name: play.name.trim() || "Player",
@@ -174,7 +246,13 @@ export async function openLiveSession(play: {
     stationName: play.stationName,
     startedAt: play.startedAt,
     endedAt: play.startedAt,
-    bookedMinutes: play.bookedMinutes,
+    endsAt: play.startedAt + planMinutes * 60 * 1000,
+    bookedMinutes: planMinutes,
+    planMinutes,
+    extraMinutes: 0,
+    players: Math.max(1, Math.round(play.players ?? 2)),
+    note: (play.note ?? "").slice(0, 120),
+    member: Boolean(play.member),
     paidMinutes: 0,
     points: 0,
     amountRupees: 0,
@@ -184,9 +262,27 @@ export async function openLiveSession(play: {
   });
 }
 
+export async function extendLiveSession(play: {
+  stationId: string;
+  startedAt: number;
+  endsAt: number;
+  bookedMinutes: number;
+  extraMinutes: number;
+}) {
+  const services = firebaseServices();
+  const user = services?.auth.currentUser;
+  if (!services || !user) return;
+  await updateDoc(doc(services.db, "sessions", `${play.stationId}_${play.startedAt}`), {
+    endsAt: play.endsAt,
+    bookedMinutes: Math.round(play.bookedMinutes),
+    extraMinutes: Math.round(play.extraMinutes),
+  });
+}
+
 export async function recordPaidSession(play: FinishedPlay) {
   const phone = normalizePhone(play.phone);
-  const slices = allocatePaidMinutes(play.startedAt, play.endedAt, play.bookedMinutes);
+  const elapsed = Math.max(0, Math.floor((play.endedAt - play.startedAt) / 60000));
+  const slices = allocatePaidMinutes(play.startedAt, play.endedAt, Math.max(play.bookedMinutes, elapsed));
   const paidMinutes = slices.reduce((sum, slice) => sum + slice.minutes, 0);
   if (!phone || paidMinutes <= 0) {
     await closeWithoutPoints(play, paidMinutes);
@@ -246,6 +342,7 @@ export async function recordPaidSession(play: FinishedPlay) {
         phoneE164: phoneE164(phone),
         lifetimeMinutes: paidMinutes,
         lifetimePoints: award.points,
+        lifetimeRupees: payment.amountRupees,
         bankedMinutes: award.bankedMinutes,
         sessionCount: 1,
         lastPlayedAt: play.endedAt,
@@ -258,6 +355,7 @@ export async function recordPaidSession(play: FinishedPlay) {
         name,
         lifetimeMinutes: Number(previous?.lifetimeMinutes ?? 0) + paidMinutes,
         lifetimePoints: Number(previous?.lifetimePoints ?? 0) + award.points,
+        lifetimeRupees: Number(previous?.lifetimeRupees ?? 0) + payment.amountRupees,
         bankedMinutes: award.bankedMinutes,
         sessionCount: Number(previous?.sessionCount ?? 0) + 1,
         lastPlayedAt: play.endedAt,

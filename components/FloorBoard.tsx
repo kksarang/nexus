@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
-import type { FinishedPlay } from "@/lib/loyalty";
+import { chargeForSession, type FinishedPlay } from "@/lib/loyalty";
+import type { LiveTimer } from "@/lib/loyaltyApi";
 import { rateForStation, stations } from "@/lib/site";
 
 type Session = {
@@ -35,7 +36,6 @@ export type DeskMembership = { id: string; left: number; endsLabel: string } | n
 
 const MEMBER_STATIONS = ["01", "02", "03", "04"];
 
-const STORAGE_KEY = "nexus-floor";
 const MIN_PLAYERS = 1;
 const MAX_PLAYERS = 8;
 const DURATIONS = [
@@ -97,46 +97,36 @@ function playAlarm() {
   });
 }
 
-function asSession(value: unknown): Session | null {
-  if (!value || typeof value !== "object") return null;
-  const item = value as Partial<Session>;
-  if (typeof item.endsAt !== "number" || typeof item.players !== "number" || typeof item.hours !== "number") {
-    return null;
-  }
+function sessionFromTimer(remote: LiveTimer, stationEnd: number): Session {
+  const plannedEnd = Math.max(remote.endsAt, remote.startedAt + (remote.planMinutes + remote.extraMinutes) * 60 * 1000);
+  const stationExtends = stationEnd > plannedEnd + 30 * 1000;
+  const extraMinutes = stationExtends
+    ? Math.max(remote.extraMinutes, Math.round((stationEnd - remote.startedAt) / 60000) - remote.planMinutes)
+    : remote.extraMinutes;
+  const endsAt = stationExtends ? Math.max(plannedEnd, stationEnd) : plannedEnd;
   return {
-    name: typeof item.name === "string" ? item.name : "",
-    phone: typeof item.phone === "string" ? item.phone : "",
-    note: typeof item.note === "string" ? item.note : "",
-    players: item.players,
-    hours: item.hours,
-    startedAt:
-      typeof item.startedAt === "number"
-        ? item.startedAt
-        : item.endsAt - item.hours * 60 * 60 * 1000 - (typeof item.extraMinutes === "number" ? item.extraMinutes : 0) * 60 * 1000,
-    endsAt: item.endsAt,
-    alarmed: Boolean(item.alarmed),
-    extraMinutes: typeof item.extraMinutes === "number" ? item.extraMinutes : 0,
-    member: item.member === true,
+    name: remote.name,
+    phone: remote.phone,
+    note: remote.note,
+    players: remote.players,
+    hours: remote.planMinutes / 60,
+    startedAt: remote.startedAt,
+    endsAt,
+    alarmed: endsAt <= Date.now(),
+    extraMinutes,
+    member: remote.member,
   };
 }
 
-function loadSessions() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const now = Date.now();
-    const sessions: Record<string, Session> = {};
-    for (const [id, value] of Object.entries(parsed)) {
-      const session = asSession(value);
-      if (!session) continue;
-      if (session.endsAt <= now) session.alarmed = true;
-      sessions[id] = session;
-    }
-    return sessions;
-  } catch {
-    return {};
-  }
+function amountFor(session: Session, stationId: string, endedAt: number) {
+  const hourly = rateForStation(stationId).rupees ?? 0;
+  return chargeForSession({
+    hourlyRupees: hourly,
+    startedAt: session.startedAt,
+    endedAt,
+    planMinutes: Math.round(session.hours * 60),
+    member: session.member,
+  });
 }
 
 export function FloorBoard({
@@ -147,6 +137,9 @@ export function FloorBoard({
   customersLoading = false,
   onLookupMembership,
   readOnly = false,
+  timersReady = false,
+  remoteSessions = [],
+  stationUntil = {},
   onFinish,
   onStart,
   onExtend,
@@ -158,8 +151,11 @@ export function FloorBoard({
   customersLoading?: boolean;
   onLookupMembership?: (customerId: string) => Promise<DeskMembership>;
   readOnly?: boolean;
+  timersReady?: boolean;
+  remoteSessions?: LiveTimer[];
+  stationUntil?: Record<string, number | null>;
   onFinish?: (play: FinishedPlay) => void;
-  onExtend?: (stationId: string, endsAt: number) => void;
+  onExtend?: (play: { stationId: string; startedAt: number; endsAt: number; bookedMinutes: number; extraMinutes: number }) => void;
   onStart?: (play: {
     stationId: string;
     stationName: string;
@@ -167,6 +163,10 @@ export function FloorBoard({
     phone: string;
     startedAt: number;
     bookedMinutes: number;
+    planMinutes: number;
+    players: number;
+    note: string;
+    member: boolean;
     membershipId?: string;
     memberSessions?: number;
   }) => void;
@@ -176,22 +176,18 @@ export function FloorBoard({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [selected, setSelected] = useState<string>(only ?? stations[0].id);
   const [now, setNow] = useState(0);
-  const [collected, setCollected] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [errorBay, setErrorBay] = useState("");
   const sessionsRef = useRef(sessions);
+  const closedRef = useRef(new Map<string, number>());
 
   useEffect(() => {
     sessionsRef.current = sessions;
   }, [sessions]);
 
   useEffect(() => {
-    const loaded = loadSessions();
-    const frame = window.requestAnimationFrame(() => {
-      setSessions(loaded);
-      setNow(Date.now());
-    });
+    const frame = window.requestAnimationFrame(() => setNow(Date.now()));
     const arm = () => {
       armAlarm();
     };
@@ -226,9 +222,36 @@ export function FloorBoard({
   }, []);
 
   useEffect(() => {
-    if (!now) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-  }, [sessions, now]);
+    if (!timersReady) return;
+    setSessions((current) => {
+      const next: Record<string, Session> = {};
+      for (const remote of remoteSessions) {
+        const key = `${remote.stationId}_${remote.startedAt}`;
+        if ((closedRef.current.get(key) ?? 0) > Date.now()) continue;
+        const local = current[remote.stationId];
+        const restored = sessionFromTimer(remote, stationUntil[remote.stationId] ?? 0);
+        if (local && local.startedAt === remote.startedAt) {
+          const endsAt = Math.max(local.endsAt, restored.endsAt);
+          const extraMinutes = Math.max(local.extraMinutes, restored.extraMinutes);
+          next[remote.stationId] = {
+            ...restored,
+            endsAt,
+            extraMinutes,
+            alarmed: local.alarmed && endsAt <= Date.now(),
+          };
+        } else {
+          next[remote.stationId] = restored;
+        }
+      }
+      const time = Date.now();
+      for (const [id, local] of Object.entries(current)) {
+        if (next[id]) continue;
+        if ((closedRef.current.get(`${id}_${local.startedAt}`) ?? 0) > Date.now()) continue;
+        if (time - local.startedAt < 20000) next[id] = local;
+      }
+      return next;
+    });
+  }, [timersReady, remoteSessions, stationUntil]);
 
   function withCustomer(existing?: Draft) {
     if (!activeCustomer) return existing ?? emptyDraft();
@@ -302,6 +325,11 @@ export function FloorBoard({
       setError("This login can view gaming, not start a session.");
       return;
     }
+    if (!timersReady) {
+      setErrorBay(id);
+      setError("Open sessions are still loading.");
+      return;
+    }
     const draft = draftFor(id);
     const name = draft.name.trim();
     if (!name) {
@@ -349,18 +377,19 @@ export function FloorBoard({
       phone: draft.phone.trim(),
       startedAt,
       bookedMinutes,
+      planMinutes: bookedMinutes,
+      players: draft.players,
+      note: draft.note.trim(),
+      member,
       ...(member ? { membershipId: draft.membershipId, memberSessions } : {}),
     });
   }
 
-  function collectedRupees(id: string) {
-    const amount = Number(collected[id] ?? "");
-    return Number.isInteger(amount) && amount > 0 ? amount : undefined;
-  }
-
-  function clear(id: string) {
+  function clear(id: string, amount: number) {
     if (readOnly) return;
+    if (!Number.isInteger(amount) || amount < 0) return;
     const session = sessionsRef.current[id];
+    if (session) closedRef.current.set(`${id}_${session.startedAt}`, Date.now() + 20000);
     setSessions((current) => {
       const next = { ...current };
       delete next[id];
@@ -368,15 +397,16 @@ export function FloorBoard({
     });
     if (!session || !onFinish) return;
     const bay = stations.find((item) => item.id === id);
+    const endedAt = Date.now();
     onFinish({
       stationId: id,
       stationName: bay?.name ?? id,
       name: session.name,
       phone: session.phone,
       startedAt: session.startedAt,
-      endedAt: Date.now(),
-      bookedMinutes: session.hours * 60 + session.extraMinutes,
-      collectedRupees: collectedRupees(id),
+      endedAt,
+      bookedMinutes: Math.round(session.hours * 60) + session.extraMinutes,
+      ...(amount > 0 ? { collectedRupees: amount } : {}),
     });
   }
 
@@ -399,7 +429,13 @@ export function FloorBoard({
       };
     });
     setNotice(`${stations.find((item) => item.id === id)?.name ?? "Station"} extended by 15 minutes.`);
-    onExtend?.(id, endsAt);
+    onExtend?.({
+      stationId: id,
+      startedAt: existing.startedAt,
+      endsAt,
+      bookedMinutes: Math.round(existing.hours * 60) + existing.extraMinutes + 15,
+      extraMinutes: existing.extraMinutes + 15,
+    });
   }
 
   const station = board.find((item) => item.id === selected) ?? board[0];
@@ -429,14 +465,13 @@ export function FloorBoard({
         customers={customers}
         customersLoading={customersLoading}
         readOnly={readOnly}
+        timersReady={timersReady}
         onDraft={updateDraft}
         onChoose={chooseCustomer}
         onClearCustomer={clearCustomer}
         onStart={start}
         onExtend={extend}
         onClear={clear}
-        collected={collected}
-        onCollect={(id, value) => setCollected((current) => ({ ...current, [id]: value.replace(/\D/g, "").slice(0, 6) }))}
       />
     );
   }
@@ -490,7 +525,7 @@ export function FloorBoard({
                     {current ? current.name || "Guest" : item.privateRoom ? "Private room" : "Ready"}
                   </span>
                   <span className="mt-1 block truncate text-[0.62rem] uppercase tracking-[0.16em] text-mist">
-                    {running ? formatClock(remaining) : complete ? "Time up" : item.name}
+                    {running && now > 0 ? formatClock(remaining) : complete ? "Time up" : item.name}
                   </span>
                 </span>
               </button>
@@ -514,9 +549,8 @@ export function FloorBoard({
           onClearCustomer={() => clearCustomer(station.id)}
           onStart={() => start(station.id)}
           onExtend={() => extend(station.id)}
-          onClear={() => clear(station.id)}
-          collected={collected[station.id] ?? ""}
-          onCollect={(value) => setCollected((current) => ({ ...current, [station.id]: value.replace(/\D/g, "").slice(0, 6) }))}
+          onClear={(amount) => clear(station.id, amount)}
+          timersReady={timersReady}
         />
       </div>
     </div>
@@ -539,8 +573,7 @@ function Desk({
   onStart,
   onExtend,
   onClear,
-  collected,
-  onCollect,
+  timersReady,
 }: {
   stationId: string;
   name: string;
@@ -556,20 +589,20 @@ function Desk({
   onClearCustomer: () => void;
   onStart: () => void;
   onExtend: () => void;
-  onClear: () => void;
-  collected: string;
-  onCollect: (value: string) => void;
+  onClear: (amount: number) => void;
+  timersReady: boolean;
 }) {
   const remaining = session ? session.endsAt - now : 0;
   const complete = Boolean(session && now > 0 && remaining <= 0);
   const running = Boolean(session && !complete);
-  const total = session ? session.hours * 60 * 60 * 1000 : 1;
+  const total = session ? (session.hours * 60 + session.extraMinutes) * 60 * 1000 : 1;
   const progress = running ? Math.min(1, Math.max(0, remaining / total)) : complete ? 0 : 1;
   const hourly = rateForStation(stationId);
   const bookedHours = session?.hours ?? draft.hours;
   const extraMinutes = session?.extraMinutes ?? 0;
   const extraCost = hourly?.rupees != null ? Math.round((extraMinutes / 60) * hourly.rupees) : 0;
-  const amount = hourly?.rupees != null ? Math.round(hourly.rupees * bookedHours + extraCost) : null;
+  const quote = session && now > 0 ? amountFor(session, stationId, now) : null;
+  const amount = quote ? quote.amount : hourly?.rupees != null ? Math.round(hourly.rupees * bookedHours + extraCost) : null;
 
   return (
     <article className={`floor-card ${complete ? "is-complete" : ""} ${running ? "is-live" : ""}`}>
@@ -632,7 +665,7 @@ function Desk({
               </div>
               <div>
                 <p className="clock-digits font-tech text-[clamp(2.8rem,9vw,6.5rem)] leading-none text-cyan" role="timer">
-                  {complete ? "00:00:00" : formatClock(remaining)}
+                  {now > 0 ? (complete ? "00:00:00" : formatClock(remaining)) : "—"}
                 </p>
                 <div className="mt-6 h-1 bg-white/10">
                   <div
@@ -644,27 +677,7 @@ function Desk({
                   <p className="text-sm text-paper">{complete ? "Time is up." : "Clock is running."}</p>
                   <p className="font-tech text-[0.58rem] tracking-[0.18em] text-mist uppercase">Live timer</p>
                 </div>
-                <label className="mt-7 block">
-                  <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Amount collected</span>
-                  <input
-                    inputMode="numeric"
-                    value={collected}
-                    onChange={(event) => onCollect(event.target.value)}
-                    className="desk-input mt-1"
-                    placeholder="Added to today's revenue"
-                  />
-                </label>
-                <p className="mt-2 text-sm text-mist">
-                  If they leave early, type the amount and press Complete now. The clock stops and that amount is added to today&apos;s revenue.
-                </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button type="button" className="btn btn-primary w-full" onClick={onClear}>
-                    {complete ? "Clear station" : "Complete now"}
-                  </button>
-                  <button type="button" className="btn btn-secondary w-full" onClick={onExtend}>
-                    + 15 minutes
-                  </button>
-                </div>
+                <CompleteBox session={session} now={now} stationId={stationId} onExtend={onExtend} onComplete={onClear} />
               </div>
             </div>
           ) : (
@@ -676,7 +689,7 @@ function Desk({
               }}
             >
               <div>
-                <p className="font-tech text-[0.6rem] tracking-[0.24em] text-cyan uppercase">New session</p>
+                <p className="font-tech text-[0.6rem] tracking-[0.24em] text-cyan uppercase">{timersReady ? "New session" : "Loading"}</p>
                 <h3 className="mt-2 text-3xl text-paper sm:text-4xl">
                   {privateRoom ? "Who will be in the room" : "Add customer details"}
                 </h3>
@@ -859,6 +872,77 @@ function CustomerFields({
   );
 }
 
+function CompleteBox({
+  session,
+  now,
+  stationId,
+  onExtend,
+  onComplete,
+}: {
+  session: Session;
+  now: number;
+  stationId: string;
+  onExtend: () => void;
+  onComplete: (amount: number) => void;
+}) {
+  const quote = amountFor(session, stationId, now > 0 ? now : session.startedAt);
+  const [edited, setEdited] = useState<string | null>(null);
+  const value = edited ?? String(quote.amount);
+  const amount = Number(value);
+  const ready = value.trim() !== "" && Number.isInteger(amount) && amount >= 0;
+  const started = new Date(session.startedAt).toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return (
+    <div className="mt-4">
+      <p className="text-sm text-paper">
+        {quote.usedMinutes} min played · suggested {formatRupees(quote.amount)}
+      </p>
+      <p className="mt-1 text-xs text-mist">
+        Started {started} · {durationLabel(session.hours)} booked
+        {session.extraMinutes ? ` · +${session.extraMinutes} min` : ""}.
+      </p>
+      <label className="mt-3 block">
+        <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Amount paid ₹</span>
+        <input
+          inputMode="numeric"
+          value={value}
+          onFocus={() => {
+            if (edited === null) setEdited(value);
+          }}
+          onChange={(event) => setEdited(event.target.value.replace(/\D/g, "").slice(0, 6))}
+          className="desk-input mt-1"
+          placeholder="Enter the amount"
+        />
+      </label>
+      <p className="mt-2 text-xs text-mist">
+        {ready
+          ? session.phone
+            ? `${formatRupees(amount)} and the points for this time are saved on ${session.name}.`
+            : `${formatRupees(amount)} is saved. There is no mobile number, so points cannot be added to a customer.`
+          : "Enter the amount paid. Complete stays off until this box has a number."}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          className={`btn btn-primary w-full px-2 ${ready ? "" : "cursor-not-allowed opacity-40"}`}
+          disabled={!ready}
+          onClick={() => {
+            if (ready) onComplete(amount);
+          }}
+        >
+          Complete
+        </button>
+        <button type="button" className="btn btn-secondary w-full px-2" onClick={onExtend}>
+          + 15 extra
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DurationPicker({ hours, onChange }: { hours: number; onChange: (hours: number) => void }) {
   return (
     <fieldset>
@@ -979,14 +1063,13 @@ function ConsoleWall({
   customers,
   customersLoading,
   readOnly,
+  timersReady,
   onDraft,
   onChoose,
   onClearCustomer,
   onStart,
   onExtend,
   onClear,
-  collected,
-  onCollect,
 }: {
   board: readonly (typeof stations)[number][];
   sessions: Record<string, Session>;
@@ -1003,9 +1086,8 @@ function ConsoleWall({
   onClearCustomer: (id: string) => void;
   onStart: (id: string) => void;
   onExtend: (id: string) => void;
-  onClear: (id: string) => void;
-  collected: Record<string, string>;
-  onCollect: (id: string, value: string) => void;
+  onClear: (id: string, amount: number) => void;
+  timersReady: boolean;
 }) {
   return (
     <div>
@@ -1030,7 +1112,8 @@ function ConsoleWall({
           const extraMinutes = session?.extraMinutes ?? 0;
           const rate = hourly?.rupees ?? 0;
           const extraCost = Math.round((extraMinutes / 60) * rate);
-          const amount = Math.round(session?.member ? extraCost : rate * hours + extraCost);
+          const quote = session && now > 0 ? amountFor(session, item.id, now) : null;
+          const amount = quote ? quote.amount : Math.round(rate * hours);
           const persons = session?.players ?? draft.players;
           const memberCovered = Boolean(draft.membershipId && MEMBER_STATIONS.includes(item.id));
           return (
@@ -1061,7 +1144,7 @@ function ConsoleWall({
                 {session && now > 0 ? (
                   <div className="mt-4">
                     <p className="clock-digits text-[clamp(2rem,6vw,3.4rem)] leading-none" style={{ color: tone }}>
-                      {complete ? "00:00:00" : formatClock(remaining)}
+                      {now > 0 ? (complete ? "00:00:00" : formatClock(remaining)) : "—"}
                     </p>
                     <dl className="mt-4 grid grid-cols-3 gap-2">
                       <div className="console-stat">
@@ -1074,7 +1157,7 @@ function ConsoleWall({
                       </div>
                       <div className="console-stat">
                         <dt>{session.member ? "Membership" : "Amount"}</dt>
-                        <dd>{session.member ? (extraCost ? `+${formatRupees(extraCost)}` : "Prepaid") : formatRupees(amount)}</dd>
+                        <dd>{session.member && amount === 0 ? "Prepaid" : formatRupees(amount)}</dd>
                       </div>
                     </dl>
                     {extraMinutes > 0 ? (
@@ -1086,27 +1169,13 @@ function ConsoleWall({
                       <p className="mt-4 text-sm text-mist">View only. This login cannot change a running session.</p>
                     ) : (
                       <>
-                        <label className="mt-4 block">
-                          <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Collected ₹</span>
-                          <input
-                            inputMode="numeric"
-                            value={collected[item.id] ?? ""}
-                            onChange={(event) => onCollect(item.id, event.target.value)}
-                            className="desk-input mt-1"
-                            placeholder="Added to today's revenue"
-                          />
-                        </label>
-                        <p className="mt-2 text-xs text-mist">
-                          Leaving early? Type the amount, then Complete now. It is added to today&apos;s revenue.
-                        </p>
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                          <button type="button" className="btn btn-primary w-full px-2" onClick={() => onClear(item.id)}>
-                            {complete ? "Clear" : "Complete now"}
-                          </button>
-                          <button type="button" className="btn btn-secondary w-full px-2" onClick={() => onExtend(item.id)}>
-                            + 15 extra
-                          </button>
-                        </div>
+                        <CompleteBox
+                          session={session}
+                          now={now}
+                          stationId={item.id}
+                          onExtend={() => onExtend(item.id)}
+                          onComplete={(amount) => onClear(item.id, amount)}
+                        />
                       </>
                     )}
                   </div>
@@ -1118,6 +1187,9 @@ function ConsoleWall({
                       onStart(item.id);
                     }}
                   >
+                    {!timersReady ? <p className="text-sm text-mist">Loading the saved timer…</p> : null}
+                    {timersReady ? (
+                      <>
                     <CustomerFields
                       draft={draft}
                       customers={customers}
@@ -1160,6 +1232,8 @@ function ConsoleWall({
                         Start timer
                       </button>
                     )}
+                      </>
+                    ) : null}
                   </form>
                 )}
               </div>
