@@ -99,6 +99,9 @@ export function useStaff() {
 
 export function authMessage(reason: unknown) {
   const code = typeof reason === "object" && reason && "code" in reason ? String(reason.code) : "";
+  if (code === "auth/configuration-not-found") {
+    return "Firebase Authentication is not turned on yet. In the Firebase console, open Authentication, click Get started, then enable Email/Password.";
+  }
   if (code === "auth/operation-not-allowed") {
     return "In Firebase Authentication, turn on Email/Password and Email link.";
   }

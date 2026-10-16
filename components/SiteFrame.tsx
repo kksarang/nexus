@@ -21,7 +21,7 @@ function Chrome({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Suspense fallback={<div className="h-[4.5rem]" />}>
+      <Suspense fallback={<div className="h-20 lg:h-36" />}>
         <Header />
       </Suspense>
       <div className="flex-1">{children}</div>

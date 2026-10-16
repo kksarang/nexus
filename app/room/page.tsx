@@ -16,7 +16,7 @@ export default function RoomPage() {
 
   return (
     <main id="content">
-      <section className="pt-28 pb-20 sm:pt-32 sm:pb-24">
+      <section className="pt-28 pb-20 sm:pt-32 sm:pb-24 lg:pt-44">
         <div className="shell">
           <div className="grid gap-6 border-b border-white/10 pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
