@@ -1,11 +1,15 @@
+"use client";
+
 import { Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
 import { StatusLine, StatusPill } from "@/components/LiveStatus";
 import { SectionIntro } from "@/components/SectionIntro";
+import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { rateForStation, stations } from "@/lib/site";
+import { hourlyFor } from "@/lib/prices";
+import { stations } from "@/lib/site";
 
 function PriceTag({ rupees, unit }: { rupees: number | null | undefined; unit?: string }) {
   if (rupees == null) {
@@ -24,6 +28,7 @@ function PriceTag({ rupees, unit }: { rupees: number | null | undefined; unit?: 
 }
 
 export function Stations({ heading = true }: { heading?: boolean }) {
+  const prices = useLivePrices();
   const floor = stations.filter((station) => !station.privateRoom);
   const room = stations.find((station) => station.privateRoom);
 
@@ -86,7 +91,7 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                   ))}
                 </ul>
                 <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={rateForStation(station.id).rupees} unit={rateForStation(station.id).unit} />
+                  <PriceTag rupees={hourlyFor(station.id, prices)} unit="per hour" />
                   <BookButton station={station.id} className="min-h-10 px-4">
                     Book
                   </BookButton>
@@ -123,7 +128,7 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                   ))}
                 </ul>
                 <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={rateForStation(room.id).rupees} unit={rateForStation(room.id).unit} />
+                  <PriceTag rupees={hourlyFor(room.id, prices)} unit="per hour" />
                   <Link href="/private-room" className="btn btn-primary min-h-10 px-4">
                     Explore
                   </Link>

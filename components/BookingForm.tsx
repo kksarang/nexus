@@ -2,8 +2,10 @@
 
 import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { memberships, rateForStation, site, stations, whatsappLink } from "@/lib/site";
+import { hourlyFor } from "@/lib/prices";
+import { memberships, site, stations, whatsappLink } from "@/lib/site";
 
 type Mode = "station" | "membership";
 
@@ -54,6 +56,7 @@ function useQueryParam(key: string) {
 }
 
 export function BookingForm() {
+  const prices = useLivePrices();
   const presetStation = useQueryParam("station");
   const presetPlan = useQueryParam("plan");
   const today = useToday();
@@ -99,7 +102,7 @@ export function BookingForm() {
         `Name: ${name.trim()}`,
         `Phone: ${phone.trim()}`,
         `Plan: ${tier}`,
-        chosen ? `Amount: ${formatRupees(chosen.rupees)} for ${chosen.sessions} sessions` : "",
+        chosen ? `Amount: ${formatRupees(prices.memberRupees)} for ${prices.memberSessions} sessions` : "",
         date ? `Start date: ${formatDate(date)}` : "",
         notes.trim() ? `Notes: ${notes.trim()}` : "",
       ]
@@ -111,10 +114,10 @@ export function BookingForm() {
         ? "Any available station"
         : `${stations.find((item) => item.id === station)?.name ?? station} (Station ${station})`;
     const hourCount = hours.includes("+") ? null : Number.parseInt(hours, 10);
-    const rate = rateForStation(station === "any" ? "01" : station);
+    const rate = hourlyFor(station === "any" ? "01" : station, prices);
     const amountLine =
-      rate?.rupees != null && hourCount
-        ? `Amount: ${formatRupees(rate.rupees * hourCount)} (${formatRupees(rate.rupees)} per hour × ${hourCount})`
+      hourCount
+        ? `Amount: ${formatRupees(rate * hourCount)} (${formatRupees(rate)} per hour × ${hourCount})`
         : "";
     return [
       "Hi Nexus Playzone, I would like to book a session.",
@@ -316,6 +319,7 @@ export function BookingForm() {
                   </option>
                 ))}
               </select>
+              <span className="mt-2 block text-xs text-mist">{formatRupees(prices.memberRupees)} for {prices.memberSessions} sessions on Stations 01 to 04.</span>
             </label>
             <label className="field">
               <span className="field-label">Start date</span>

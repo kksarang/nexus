@@ -4,6 +4,7 @@ import { BadgeCheck, Download, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDesk } from "@/components/admin/AdminShell";
+import { useLivePrices } from "@/components/useLivePrices";
 import { downloadCsv, formatIst } from "@/lib/adminStats";
 import {
   cancelMembership,
@@ -16,7 +17,6 @@ import {
   loadUses,
   memberState,
   oneMonthFrom,
-  plan,
   sessionsLeft,
   undoUse,
   spendSessions,
@@ -55,8 +55,41 @@ function Message({ value }: { value: { ok: boolean; text: string } | null }) {
   );
 }
 
+function PlayMarks({ item, now, editable, busy, onMark }: { item: Membership; now: number; editable: boolean; busy: boolean; onMark: () => void }) {
+  const total = Math.max(0, item.sessionsTotal);
+  const canMark = editable && memberState(item, now) === "active";
+  return (
+    <div>
+      <h3 className="text-base text-paper">{item.sessionsUsed} of {total} plays marked</h3>
+      <p className="mt-1 text-xs text-mist">Each box is one play on Stations 01 to 04. Mark the next open box when they play, or start their session on the floor and it marks itself.</p>
+      <ol className="mt-3 flex flex-wrap gap-2">
+        {Array.from({ length: total }, (_, index) => {
+          const used = index < item.sessionsUsed;
+          const next = canMark && index === item.sessionsUsed;
+          return (
+            <li key={index}>
+              <button
+                type="button"
+                disabled={!next || busy}
+                onClick={onMark}
+                aria-label={used ? `Play ${index + 1} marked` : next ? `Mark play ${index + 1}` : `Play ${index + 1} still open`}
+                className={`grid h-9 w-9 place-items-center rounded-lg border text-xs font-semibold ${used ? "border-cyan bg-cyan text-ink" : next ? "border-cyan text-cyan" : "border-white/15 text-mist"} ${next ? "" : "cursor-default"}`}
+              >
+                {used ? "✓" : index + 1}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 function AddMember({ now, onDone }: { now: number; onDone: (text: string) => void }) {
-  const [form, setForm] = useState({ phone: "", name: "", amount: String(plan.rupees), start: "", note: "", consent: false });
+  const prices = useLivePrices();
+  const [amountEdited, setAmountEdited] = useState<string | null>(null);
+  const [form, setForm] = useState({ phone: "", name: "", start: "", note: "", consent: false });
+  const amount = amountEdited ?? String(prices.memberRupees);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const start = form.start || (now ? istDateInput(now) : "");
@@ -70,8 +103,8 @@ function AddMember({ now, onDone }: { now: number; onDone: (text: string) => voi
         if (startAt === null) return setMessage({ ok: false, text: "Pick the start date." });
         setBusy(true);
         setMessage(null);
-        void createMembership({ phone: form.phone, name: form.name, amountPaid: Number(form.amount || 0), startAt, consent: form.consent, note: form.note })
-          .then(() => onDone(`Membership added. ${plan.sessions} sessions valid until ${formatDay(oneMonthFrom(startAt))}.`))
+        void createMembership({ phone: form.phone, name: form.name, amountPaid: Number(amount || 0), startAt, consent: form.consent, note: form.note })
+          .then(() => onDone(`Membership added. ${prices.memberSessions} plays valid until ${formatDay(oneMonthFrom(startAt))}.`))
           .catch((reason: unknown) => setMessage({ ok: false, text: reason instanceof Error ? reason.message : "Could not add the member." }))
           .finally(() => setBusy(false));
       }}
@@ -79,13 +112,13 @@ function AddMember({ now, onDone }: { now: number; onDone: (text: string) => voi
       <div>
         <h2 className="text-xl text-paper">Add a monthly member</h2>
         <p className="mt-1 text-sm text-mist">
-          {plan.sessions} one-hour sessions on Stations 01 to 04, valid for one month from the start date. If the number is already registered, the existing player is used.
+          {prices.memberSessions} plays on Stations 01 to 04, valid for one month from the start date. The plan price is ₹{prices.memberRupees.toLocaleString("en-IN")}. If the number is already registered, the existing player is used.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm text-mist">Mobile number<input className="desk-input mt-1" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} required /></label>
         <label className="text-sm text-mist">Name (for a new player)<input className="desk-input mt-1" value={form.name} maxLength={60} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
-        <label className="text-sm text-mist">Amount collected ₹<input className="desk-input mt-1" inputMode="numeric" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value.replace(/\D/g, "").slice(0, 6) })} /></label>
+        <label className="text-sm text-mist">Amount collected ₹<input className="desk-input mt-1" inputMode="numeric" value={amount} onChange={(event) => setAmountEdited(event.target.value.replace(/\D/g, "").slice(0, 6))} /></label>
         <label className="text-sm text-mist">Start date<input type="date" className="desk-input mt-1" value={start} onChange={(event) => setForm({ ...form, start: event.target.value })} required /></label>
       </div>
       <label className="text-sm text-mist">Note (optional)<input className="desk-input mt-1" value={form.note} maxLength={120} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="For example: paid by UPI" /></label>
@@ -157,6 +190,13 @@ function MemberDetail({ item, now, editable, onChanged }: { item: Membership; no
         ))}
       </dl>
       {item.note ? <p className="text-sm text-mist">Note: {item.note}</p> : null}
+      <PlayMarks
+        item={item}
+        now={now}
+        editable={editable}
+        busy={busy}
+        onMark={() => run(() => spendSessions(item.id, 1, "", ""), `Play ${item.sessionsUsed + 1} of ${item.sessionsTotal} marked.`)}
+      />
 
       {editable && item.status === "active" ? (
         <div className="flex flex-wrap gap-2">
@@ -214,6 +254,7 @@ function MemberDetail({ item, now, editable, onChanged }: { item: Membership; no
 
 export function MembersDesk() {
   const desk = useDesk();
+  const prices = useLivePrices();
   const [rows, setRows] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -277,7 +318,7 @@ export function MembersDesk() {
         <div>
           <h1 className="flex items-center gap-2 text-4xl tracking-wide text-paper uppercase"><BadgeCheck size={26} aria-hidden="true" /> Members</h1>
           <p className="mt-2 max-w-2xl text-sm text-mist">
-            Monthly plan: ₹{plan.rupees.toLocaleString("en-IN")} for {plan.sessions} sessions on Stations 01 to 04. Only staff can add members. Visitors can only read about the plan on the website.
+            Monthly plan: ₹{prices.memberRupees.toLocaleString("en-IN")} for {prices.memberSessions} plays on Stations 01 to 04. Only staff can add members. Visitors can only read about the plan on the website.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -354,9 +395,13 @@ export function MembersDesk() {
                   <td className="px-4 py-3 font-medium text-paper">{item.name}</td>
                   <td className="px-4 py-3 text-mist">{item.phone}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-paper">{left} / {item.sessionsTotal}</span>
-                      <span className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-cyan" style={{ width: `${(left / Math.max(1, item.sessionsTotal)) * 100}%` }} /></span>
+                    <div className="grid gap-1">
+                      <span className="text-paper">{item.sessionsUsed} marked · {left} left</span>
+                      <span className="flex max-w-52 flex-wrap gap-0.5" aria-hidden="true">
+                        {Array.from({ length: item.sessionsTotal }, (_, index) => (
+                          <span key={index} className={`h-2 w-2 rounded-sm ${index < item.sessionsUsed ? "bg-cyan" : "bg-white/15"}`} />
+                        ))}
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-mist">{formatDay(item.endAt)}</td>

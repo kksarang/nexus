@@ -71,7 +71,7 @@ const links: { href: string; label: string; icon: typeof LayoutDashboard; module
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3, module: "reports" },
   { href: "/admin/reports", label: "Reports & Export", icon: BarChart3, module: "reports" },
   { href: "/admin/staff", label: "Office staff", icon: UserCog, module: "admin" },
-  { href: "/admin/settings", label: "Settings", icon: Settings, module: "admin" },
+  { href: "/admin/settings", label: "Utility", icon: Settings, module: "admin" },
 ];
 
 let monthBounds: { from: number; to: number } | null = null;

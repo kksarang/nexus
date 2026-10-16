@@ -3,6 +3,7 @@ import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
 import { LiveBoard } from "@/components/LiveStatus";
 import { PageHero } from "@/components/PageHero";
+import { StationsIntro } from "@/components/PriceCopy";
 import { Stations } from "@/components/Stations";
 
 export const metadata: Metadata = {
@@ -30,8 +31,7 @@ export default function StationsPage() {
           </>
         }
       >
-        Stations 01 to 04 are PS5 consoles at ₹160 an hour. Station 05 is the car simulator at ₹180
-        an hour. Station 06 is the private room.
+        <StationsIntro />
       </PageHero>
       <LiveBoard />
       <Stations heading={false} />

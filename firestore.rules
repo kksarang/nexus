@@ -129,6 +129,13 @@ service cloud.firestore {
           && request.resource.data.endedAt >= request.resource.data.startedAt
           && fairPoints()
         )
+      ) || (isAdmin()
+        && resource.data.status == "completed"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["amountRupees", "paymentRecorded"])
+        && request.resource.data.amountRupees is int
+        && request.resource.data.amountRupees >= 0
+        && request.resource.data.amountRupees <= 100000
+        && request.resource.data.paymentRecorded == (request.resource.data.amountRupees > 0)
       );
       allow delete: if false;
     }
@@ -148,14 +155,20 @@ service cloud.firestore {
         && request.resource.data.endAt > request.resource.data.startAt
         && request.resource.data.customerId is string
         && request.resource.data.createdBy == request.auth.uid;
-      allow update: if canEdit("members")
+      allow update: if (canEdit("members")
         && resource.data.status == "active"
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["sessionsUsed", "lastUsedAt", "endAt", "status", "note"])
         && request.resource.data.sessionsUsed is int
         && request.resource.data.sessionsUsed >= 0
         && request.resource.data.sessionsUsed <= resource.data.sessionsTotal
         && request.resource.data.status in ["active", "cancelled"]
-        && request.resource.data.endAt > resource.data.startAt;
+        && request.resource.data.endAt > resource.data.startAt)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["amountPaid"])
+          && request.resource.data.amountPaid is int
+          && request.resource.data.amountPaid >= 0
+          && request.resource.data.amountPaid <= 100000
+        );
       allow delete: if false;
     }
 
@@ -198,17 +211,40 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /settings/{id} {
-      allow read: if true;
-      allow create, update: if isAdmin()
-        && id == "notice"
-        && request.resource.data.keys().hasOnly(["text", "active", "until", "updatedBy", "updatedAt"])
-        && request.resource.data.text is string
-        && request.resource.data.text.size() <= 160
-        && request.resource.data.active is bool
-        && (request.resource.data.until == null || request.resource.data.until is number)
+    function validPrices() {
+      return request.resource.data.keys().hasOnly(["station", "simulator", "privateRoom", "memberSessions", "memberRupees", "updatedBy", "updatedAt"])
+        && request.resource.data.station is int
+        && request.resource.data.station >= 1
+        && request.resource.data.station <= 10000
+        && request.resource.data.simulator is int
+        && request.resource.data.simulator >= 1
+        && request.resource.data.simulator <= 10000
+        && request.resource.data.privateRoom is int
+        && request.resource.data.privateRoom >= 1
+        && request.resource.data.privateRoom <= 10000
+        && request.resource.data.memberSessions is int
+        && request.resource.data.memberSessions >= 1
+        && request.resource.data.memberSessions <= 60
+        && request.resource.data.memberRupees is int
+        && request.resource.data.memberRupees >= 0
+        && request.resource.data.memberRupees <= 100000
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time;
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && (
+        (id == "notice"
+          && request.resource.data.keys().hasOnly(["text", "active", "until", "updatedBy", "updatedAt"])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 160
+          && request.resource.data.active is bool
+          && (request.resource.data.until == null || request.resource.data.until is number)
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time)
+        || (id == "prices" && validPrices())
+      );
       allow delete: if false;
     }
   }

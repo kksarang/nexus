@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where } from "firebase/firestore";
 import { firebaseServices } from "@/lib/firebaseClient";
 import { millisOf, normalizePhone, phoneE164 } from "@/lib/loyalty";
+import { readPrices } from "@/lib/prices";
 import { memberships as plans } from "@/lib/site";
 
 const IST = 330 * 60 * 1000;
@@ -164,6 +165,7 @@ export async function createMembership(input: { phone: string; name: string; amo
     if (!input.consent) throw new Error("Tick consent to store the new player's name and number.");
   }
   const endAt = oneMonthFrom(input.startAt);
+  const prices = await readPrices();
   const memberRef = doc(collection(db, "memberships"));
   try {
     await runTransaction(db, async (tx) => {
@@ -194,9 +196,9 @@ export async function createMembership(input: { phone: string; name: string; amo
         name,
         phone,
         plan: plan.key,
-        sessionsTotal: plan.sessions,
+        sessionsTotal: prices.memberSessions,
         sessionsUsed: 0,
-        priceRupees: plan.rupees,
+        priceRupees: prices.memberRupees,
         amountPaid: input.amountPaid,
         startAt: input.startAt,
         endAt,

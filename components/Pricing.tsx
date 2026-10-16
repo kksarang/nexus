@@ -1,14 +1,25 @@
+"use client";
+
 import { BadgePercent, CalendarClock, Car, Clock, Crown } from "lucide-react";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
 import { SectionIntro } from "@/components/SectionIntro";
+import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { messages, offers, rates } from "@/lib/site";
+import { messages, offers } from "@/lib/site";
 
 const icons = { station: Clock, simulator: Car, private: Crown, monthly: CalendarClock } as const;
 
 export function Pricing({ heading = true }: { heading?: boolean }) {
+  const prices = useLivePrices();
+  const each = prices.memberSessions ? Math.round(prices.memberRupees / prices.memberSessions) : 0;
+  const rates = [
+    { key: "station", label: "PS5 station", detail: "Stations 01 to 04 on the main floor.", rupees: prices.station, unit: "per hour" },
+    { key: "simulator", label: "Car simulator", detail: "Station 05. The driving simulator on the main floor.", rupees: prices.simulator, unit: "per hour" },
+    { key: "private", label: "Private room", detail: "Station 06. The room and the PS5 are yours for the session.", rupees: prices.privateRoom, unit: "per hour", featured: true },
+    { key: "monthly", label: "Monthly plan", detail: `${prices.memberSessions} sessions on Stations 01 to 04. ${formatRupees(each)} a session instead of ${formatRupees(prices.station)}.`, rupees: prices.memberRupees, unit: `for ${prices.memberSessions} sessions` },
+  ];
   return (
     <section id="pricing" className="py-20 sm:py-28">
       <div className="shell">
@@ -26,7 +37,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            ₹160 an hour on a PS5, ₹180 on the car simulator, ₹200 in the private room, or ₹2,000 for 20 PS5 sessions.
+            {formatRupees(prices.station)} an hour on a PS5, {formatRupees(prices.simulator)} on the car simulator, {formatRupees(prices.privateRoom)} in the private room, or {formatRupees(prices.memberRupees)} for {prices.memberSessions} PS5 sessions.
           </SectionIntro>
         ) : null}
 

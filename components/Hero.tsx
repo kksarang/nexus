@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
+import { HeroRates } from "@/components/PriceCopy";
 import { site } from "@/lib/site";
 
 export function Hero() {
@@ -24,7 +25,7 @@ export function Hero() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-paper">
-            Six PS5 setups, including one private room. Stations 01–04 ₹160/hour · Car simulator ₹180 · Private room ₹200.
+            <HeroRates />
           </p>
         </div>
 

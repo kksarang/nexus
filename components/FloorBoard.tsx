@@ -4,7 +4,9 @@ import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
 import { chargeForSession, type FinishedPlay } from "@/lib/loyalty";
 import type { LiveTimer } from "@/lib/loyaltyApi";
-import { rateForStation, stations } from "@/lib/site";
+import { hourlyFor, getPrices } from "@/lib/prices";
+import { useLivePrices } from "@/components/useLivePrices";
+import { stations } from "@/lib/site";
 
 type Session = {
   name: string;
@@ -119,7 +121,7 @@ function sessionFromTimer(remote: LiveTimer, stationEnd: number): Session {
 }
 
 function amountFor(session: Session, stationId: string, endedAt: number) {
-  const hourly = rateForStation(stationId).rupees ?? 0;
+  const hourly = hourlyFor(stationId, getPrices());
   return chargeForSession({
     hourlyRupees: hourly,
     startedAt: session.startedAt,
@@ -171,6 +173,7 @@ export function FloorBoard({
     memberSessions?: number;
   }) => void;
 }) {
+  useLivePrices();
   const board = only ? stations.filter((item) => item.id === only) : stations;
   const [sessions, setSessions] = useState<Record<string, Session>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -597,12 +600,12 @@ function Desk({
   const running = Boolean(session && !complete);
   const total = session ? (session.hours * 60 + session.extraMinutes) * 60 * 1000 : 1;
   const progress = running ? Math.min(1, Math.max(0, remaining / total)) : complete ? 0 : 1;
-  const hourly = rateForStation(stationId);
+  const hourly = hourlyFor(stationId, getPrices());
   const bookedHours = session?.hours ?? draft.hours;
   const extraMinutes = session?.extraMinutes ?? 0;
-  const extraCost = hourly?.rupees != null ? Math.round((extraMinutes / 60) * hourly.rupees) : 0;
+  const extraCost = Math.round((extraMinutes / 60) * hourly);
   const quote = session && now > 0 ? amountFor(session, stationId, now) : null;
-  const amount = quote ? quote.amount : hourly?.rupees != null ? Math.round(hourly.rupees * bookedHours + extraCost) : null;
+  const amount = quote ? quote.amount : Math.round(hourly * bookedHours + extraCost);
 
   return (
     <article className={`floor-card ${complete ? "is-complete" : ""} ${running ? "is-live" : ""}`}>
@@ -655,10 +658,10 @@ function Desk({
                     {session.players} {session.players === 1 ? "player" : "players"} · {durationLabel(session.hours)}
                   </p>
                   <Amount
-                    hourly={hourly?.rupees}
+                    hourly={hourly}
                     hours={session.hours}
                     amount={amount}
-                    unit={hourly?.unit}
+                    unit="per hour"
                     extraMinutes={session.extraMinutes}
                   />
                 </div>
@@ -722,7 +725,7 @@ function Desk({
                 max={MAX_PLAYERS}
               />
               <DurationPicker hours={draft.hours} onChange={(hours) => onDraft({ hours })} />
-              <Amount hourly={hourly?.rupees} hours={draft.hours} amount={amount} unit={hourly?.unit} />
+              <Amount hourly={hourly} hours={draft.hours} amount={amount} unit="per hour" />
               {error ? <p className="text-sm text-magenta">{error}</p> : null}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="max-w-sm text-xs leading-relaxed text-mist">
@@ -1107,10 +1110,9 @@ function ConsoleWall({
           const complete = Boolean(session && now > 0 && remaining <= 0);
           const running = Boolean(session && !complete);
           const tone = item.privateRoom ? "#FF4D6D" : rails[index % rails.length];
-          const hourly = rateForStation(item.id);
+          const rate = hourlyFor(item.id, getPrices());
           const hours = session?.hours ?? draft.hours;
           const extraMinutes = session?.extraMinutes ?? 0;
-          const rate = hourly?.rupees ?? 0;
           const extraCost = Math.round((extraMinutes / 60) * rate);
           const quote = session && now > 0 ? amountFor(session, item.id, now) : null;
           const amount = quote ? quote.amount : Math.round(rate * hours);

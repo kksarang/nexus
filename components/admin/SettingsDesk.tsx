@@ -2,6 +2,9 @@
 
 import { Download, Lock, Megaphone, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AmountRecords } from "@/components/admin/AmountRecords";
+import { useDesk } from "@/components/admin/AdminShell";
+import { PriceSettings } from "@/components/admin/PriceSettings";
 import { StaffManager } from "@/components/admin/StaffManager";
 import { formatIst } from "@/lib/adminStats";
 import { istDayStart, POINT_MINUTES, REWARD_MINUTES, WEEKLY_TARGET } from "@/lib/loyalty";
@@ -10,6 +13,8 @@ import { istClock } from "@/lib/stationStatus";
 
 const sections = [
   ["staff", "Staff accounts"],
+  ["prices", "Prices"],
+  ["amounts", "Saved amounts"],
   ["notice", "Website notice"],
   ["backup", "Backup"],
   ["activity", "Activity log"],
@@ -177,11 +182,15 @@ function ActivityLog() {
 }
 
 export function SettingsDesk() {
+  const desk = useDesk();
+  if (!desk.isAdmin) {
+    return <p className="text-sm text-mist">This utility is only for admins.</p>;
+  }
   return (
     <div className="grid gap-5">
       <div>
-        <h1 className="text-4xl tracking-wide text-paper uppercase">Settings</h1>
-        <p className="mt-2 text-sm text-mist">Manage who can use the desk, the website notice, backups, and see every change made.</p>
+        <h1 className="text-4xl tracking-wide text-paper uppercase">Utility</h1>
+        <p className="mt-2 text-sm text-mist">Admins can edit the prices, correct saved amounts, manage office staff, and update the website notice. Office staff do not see this page.</p>
       </div>
       <nav className="flex flex-wrap gap-2" aria-label="Settings sections">
         {sections.map(([id, label]) => (
@@ -190,6 +199,8 @@ export function SettingsDesk() {
       </nav>
 
       <StaffManager />
+      <PriceSettings />
+      <AmountRecords />
       <NoticeManager />
       <BackupPanel />
       <ActivityLog />

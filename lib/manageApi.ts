@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword, getAuth, sendPasswordResetEmail, signOu
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   onSnapshot,
@@ -238,6 +239,9 @@ function summarize(data: Record<string, unknown>) {
   if (type === "staff-access") return "Changed what an office login can see";
   if (type === "staff-remove") return `Removed desk access for ${String(before.name ?? "")}`;
   if (type === "staff-rename") return `Renamed staff to ${String(after.name ?? "")}`;
+  if (type === "prices") return `Prices updated · stations ₹${String(after.station ?? "")} · simulator ₹${String(after.simulator ?? "")} · room ₹${String(after.privateRoom ?? "")} · membership ₹${String(after.memberRupees ?? "")} for ${String(after.memberSessions ?? "")} plays`;
+  if (type === "amount-session") return `Session amount for ${String(after.name ?? "")} changed to ₹${String(after.amountRupees ?? "")}`;
+  if (type === "amount-member") return `Membership amount for ${String(after.name ?? "")} changed to ₹${String(after.amountPaid ?? "")}`;
   if (type === "notice-on") return `Website notice on: ${String(after.text ?? "")}`;
   if (type === "notice-off") return "Website notice turned off";
   if (type === "redeem") return "Free 30 minutes redeemed";
@@ -301,4 +305,94 @@ export async function downloadBackup() {
     ]);
   }
   return { players: customers.size, sessions: sessions.size, ledger: ledger.size, members: members?.size ?? 0 };
+}
+
+export type AmountRow = {
+  id: string;
+  kind: "session" | "member";
+  name: string;
+  detail: string;
+  amount: number;
+};
+
+function wholeAmount(amount: number) {
+  if (!Number.isInteger(amount) || amount < 0 || amount > 100000) throw new Error("Enter a whole amount from 0 to 100000.");
+}
+
+export async function listEditableAmounts(): Promise<AmountRow[]> {
+  const { db } = requireDb();
+  const [sessionsSnap, membersSnap] = await Promise.all([
+    getDocs(query(collection(db, "sessions"), orderBy("endedAt", "desc"), limit(80))),
+    getDocs(query(collection(db, "memberships"), orderBy("startAt", "desc"), limit(80))),
+  ]);
+  const sessions = sessionsSnap.docs
+    .filter((item) => item.data().status === "completed")
+    .slice(0, 40)
+    .map((item) => {
+      const data = item.data();
+      return {
+        id: item.id,
+        kind: "session" as const,
+        name: String(data.name ?? "Player"),
+        detail: `${String(data.stationName ?? data.stationId ?? "Station")} · ${formatIst(Number(data.endedAt ?? 0))}`,
+        amount: Number(data.amountRupees ?? 0),
+      };
+    });
+  const members = membersSnap.docs.map((item) => {
+    const data = item.data();
+    return {
+      id: item.id,
+      kind: "member" as const,
+      name: String(data.name ?? "Member"),
+      detail: `${String(data.phone ?? "")} · ${Number(data.sessionsUsed ?? 0)} of ${Number(data.sessionsTotal ?? 0)} plays`,
+      amount: Number(data.amountPaid ?? 0),
+    };
+  });
+  return [...sessions, ...members];
+}
+
+export async function updateSessionAmount(sessionId: string, amount: number) {
+  wholeAmount(amount);
+  const { db, user } = requireDb();
+  const ref = doc(db, "sessions", sessionId);
+  const snap = await getDoc(ref);
+  if (!snap.exists() || snap.data().status !== "completed") throw new Error("That completed session was not found.");
+  const before = Number(snap.data().amountRupees ?? 0);
+  const batch = writeBatch(db);
+  batch.update(ref, { amountRupees: amount, paymentRecorded: amount > 0 });
+  const customerId = String(snap.data().customerId ?? "");
+  if (customerId && amount !== before) {
+    const customerRef = doc(db, "customers", customerId);
+    const customer = await getDoc(customerRef);
+    if (customer.exists()) {
+      batch.update(customerRef, { lifetimeRupees: Math.max(0, Number(customer.data().lifetimeRupees ?? 0) + (amount - before)) });
+    }
+  }
+  batch.set(doc(collection(db, "auditLogs")), {
+    type: "amount-session",
+    before: { amountRupees: before },
+    after: { name: String(snap.data().name ?? ""), amountRupees: amount },
+    by: user.uid,
+    at: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+export async function updateMembershipAmount(membershipId: string, amount: number) {
+  wholeAmount(amount);
+  const { db, user } = requireDb();
+  const ref = doc(db, "memberships", membershipId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error("That membership was not found.");
+  const before = Number(snap.data().amountPaid ?? 0);
+  const batch = writeBatch(db);
+  batch.update(ref, { amountPaid: amount });
+  batch.set(doc(collection(db, "auditLogs")), {
+    type: "amount-member",
+    before: { amountPaid: before },
+    after: { name: String(snap.data().name ?? ""), amountPaid: amount },
+    by: user.uid,
+    at: serverTimestamp(),
+  });
+  await batch.commit();
 }
