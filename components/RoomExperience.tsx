@@ -3,7 +3,7 @@ import { FloorBoard } from "@/components/FloorBoard";
 
 export function RoomExperience() {
   return (
-    <section className="pt-28 pb-20 sm:pt-32 sm:pb-24 lg:pt-44">
+    <section className="pt-28 pb-20 sm:pt-32 sm:pb-24">
       <div className="shell">
         <div className="grid gap-8 border-b border-white/10 pb-8 lg:grid-cols-[1fr_24rem] lg:items-end">
           <div>

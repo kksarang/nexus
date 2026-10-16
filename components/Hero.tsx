@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 
 export function Hero() {
   return (
-    <section className="relative isolate overflow-hidden pt-28 pb-10 sm:pt-32 lg:pt-44 lg:pb-16">
+    <section className="relative isolate overflow-hidden pt-28 pb-10 sm:pt-32 lg:pb-16">
       <div className="shell grid items-end gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12">
         <div className="min-w-0 pb-2">
           <p className="text-[0.72rem] font-semibold tracking-[0.22em] text-cyan uppercase">

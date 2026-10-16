@@ -82,16 +82,8 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="shell mt-12 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-mist sm:flex-row sm:justify-between">
+      <div className="shell mt-12 border-t border-white/10 pt-6 text-xs text-mist">
         <p>© 2026 Nexus Playzone. All rights reserved.</p>
-        <span className="flex gap-4">
-          <Link href="/room" className="hover:text-paper">
-            Private room desk
-          </Link>
-          <Link href="/floor" className="hover:text-paper">
-            Staff floor control
-          </Link>
-        </span>
       </div>
     </footer>
   );
