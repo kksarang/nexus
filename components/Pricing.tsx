@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgePercent, CalendarClock, Car, Clock, Crown } from "lucide-react";
+import { BadgePercent, Car, Clock, Crown } from "lucide-react";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
@@ -9,16 +9,14 @@ import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
 import { messages, offers } from "@/lib/site";
 
-const icons = { station: Clock, simulator: Car, private: Crown, monthly: CalendarClock } as const;
+const icons = { station: Clock, simulator: Car, private: Crown } as const;
 
 export function Pricing({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();
-  const each = prices.memberSessions ? Math.round(prices.memberRupees / prices.memberSessions) : 0;
   const rates = [
     { key: "station", label: "PS5 station", detail: "Stations 01 to 04 on the main floor.", rupees: prices.station, unit: "per hour" },
     { key: "simulator", label: "Car simulator", detail: "Station 05. The driving simulator on the main floor.", rupees: prices.simulator, unit: "per hour" },
     { key: "private", label: "Private room", detail: "Station 06. The room and the PS5 are yours for the session.", rupees: prices.privateRoom, unit: "per hour", featured: true },
-    { key: "monthly", label: "Monthly plan", detail: `${prices.memberSessions} sessions on Stations 01 to 04. ${formatRupees(each)} a session instead of ${formatRupees(prices.station)}.`, rupees: prices.memberRupees, unit: `for ${prices.memberSessions} sessions` },
   ];
   return (
     <section id="pricing" className="py-20 sm:py-28">
@@ -37,11 +35,11 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            {formatRupees(prices.station)} an hour on a PS5, {formatRupees(prices.simulator)} on the car simulator, {formatRupees(prices.privateRoom)} in the private room, or {formatRupees(prices.memberRupees)} for {prices.memberSessions} PS5 sessions.
+            {formatRupees(prices.station)} an hour on a PS5, {formatRupees(prices.simulator)} on the car simulator, and {formatRupees(prices.privateRoom)} in the private room. Memberships are monthly, quarterly, or yearly.
           </SectionIntro>
         ) : null}
 
-        <div className={`${heading ? "mt-12" : ""} grid gap-5 md:grid-cols-2 xl:grid-cols-4`}>
+        <div className={`${heading ? "mt-12" : ""} grid gap-5 md:grid-cols-3`}>
           {rates.map((rate) => {
             const Icon = icons[rate.key as keyof typeof icons] ?? Clock;
             return (
@@ -72,19 +70,13 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
                     <p className="mt-3 text-sm text-mist">This is the rate for the booking.</p>
                   ) : null}
                 </div>
-                {rate.key === "monthly" ? (
-                  <Link href="/book?plan=monthly" className="btn btn-secondary mt-6 w-full">
-                    Ask to join
-                  </Link>
-                ) : (
-                  <BookButton
-                    station={rate.key === "private" ? "06" : rate.key === "simulator" ? "05" : undefined}
-                    variant={rate.featured ? "primary" : "secondary"}
-                    className="mt-6 w-full"
-                  >
-                    Book now
-                  </BookButton>
-                )}
+                <BookButton
+                  station={rate.key === "private" ? "06" : rate.key === "simulator" ? "05" : undefined}
+                  variant={rate.featured ? "primary" : "secondary"}
+                  className="mt-6 w-full"
+                >
+                  Book now
+                </BookButton>
               </article>
             );
           })}

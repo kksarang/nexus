@@ -228,8 +228,9 @@ export function SettingsDesk() {
           {[
             ["Point", `1 point for every ${POINT_MINUTES} paid minutes`],
             ["Weekly target", `${WEEKLY_TARGET} points, Monday to Sunday, India time`],
-            ["Reward", `${REWARD_MINUTES} free minutes, once each week`],
-            ["Balance", "Lifetime points stay. The weekly reward is not subtracted."],
+            ["Reward", `${REWARD_MINUTES} free minutes, once each week, used when that session is completed`],
+            ["Reward time", "Those 30 minutes are not charged and do not earn points. Time after them does both."],
+            ["Balance", "Lifetime points stay. The weekly reward is not subtracted. A manual correction does not change the weekly reward."],
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
               <dt className="text-xs text-mist">{label}</dt>

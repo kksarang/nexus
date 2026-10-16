@@ -8,6 +8,18 @@ export type PriceBook = {
   privateRoom: number;
   memberSessions: number;
   memberRupees: number;
+  quarterSessions: number;
+  quarterRupees: number;
+  yearSessions: number;
+  yearRupees: number;
+};
+
+export type MemberPlan = {
+  id: "monthly" | "quarterly" | "yearly";
+  label: string;
+  months: number;
+  sessions: number;
+  rupees: number;
 };
 
 function rateAmount(key: string, fallback: number) {
@@ -21,7 +33,23 @@ export const defaultPrices: PriceBook = {
   privateRoom: rateAmount("private", 200),
   memberSessions: memberships[0].sessions,
   memberRupees: memberships[0].rupees,
+  quarterSessions: memberships[1].sessions,
+  quarterRupees: memberships[1].rupees,
+  yearSessions: memberships[2].sessions,
+  yearRupees: memberships[2].rupees,
 };
+
+export function memberPlans(prices: PriceBook = currentPrices): MemberPlan[] {
+  return [
+    { id: "monthly", label: "Monthly", months: 1, sessions: prices.memberSessions, rupees: prices.memberRupees },
+    { id: "quarterly", label: "Quarterly", months: 3, sessions: prices.quarterSessions, rupees: prices.quarterRupees },
+    { id: "yearly", label: "Yearly", months: 12, sessions: prices.yearSessions, rupees: prices.yearRupees },
+  ];
+}
+
+export function memberPlan(id: string, prices: PriceBook = currentPrices) {
+  return memberPlans(prices).find((item) => item.id === id) ?? memberPlans(prices)[0];
+}
 
 function clamp(value: unknown, fallback: number, min: number, max: number) {
   const number = Number(value);
@@ -35,8 +63,12 @@ export function asPrices(data: Record<string, unknown> | undefined): PriceBook {
     station: clamp(data.station, defaultPrices.station, 1, 10000),
     simulator: clamp(data.simulator, defaultPrices.simulator, 1, 10000),
     privateRoom: clamp(data.privateRoom, defaultPrices.privateRoom, 1, 10000),
-    memberSessions: clamp(data.memberSessions, defaultPrices.memberSessions, 1, 60),
-    memberRupees: clamp(data.memberRupees, defaultPrices.memberRupees, 0, 100000),
+    memberSessions: clamp(data.memberSessions, defaultPrices.memberSessions, 1, 400),
+    memberRupees: clamp(data.memberRupees, defaultPrices.memberRupees, 0, 500000),
+    quarterSessions: clamp(data.quarterSessions, defaultPrices.quarterSessions, 1, 400),
+    quarterRupees: clamp(data.quarterRupees, defaultPrices.quarterRupees, 0, 500000),
+    yearSessions: clamp(data.yearSessions, defaultPrices.yearSessions, 1, 400),
+    yearRupees: clamp(data.yearRupees, defaultPrices.yearRupees, 0, 500000),
   };
 }
 

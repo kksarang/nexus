@@ -12,14 +12,17 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  deleteField,
   where,
 } from "firebase/firestore";
 import { parseAccess, type AccessMap } from "@/lib/deskAccess";
 import { firebaseServices } from "@/lib/firebaseClient";
 import {
+  REWARD_MINUTES,
   WEEKLY_TARGET,
-  allocatePaidMinutes,
   awardMinutes,
+  clockMinutes,
+  earningSlices,
   istDayStart,
   istMonthStart,
   istYearStart,
@@ -154,6 +157,20 @@ async function closeWithoutPoints(play: FinishedPlay, paidMinutes: number) {
   };
   if (existing.exists()) await updateDoc(sessionRef, record);
   else await setDoc(sessionRef, record);
+  const staff = await getDoc(doc(db, "staff", user.uid)).catch(() => null);
+  await setDoc(doc(collection(db, "auditLogs")), {
+    type: "session-end",
+    sessionId: sessionRef.id,
+    after: {
+      name: play.name.trim() || "Player",
+      stationName: play.stationName,
+      paidMinutes,
+      amountRupees: payment.amountRupees,
+    },
+    by: user.uid,
+    byName: String(staff?.data()?.name ?? ""),
+    at: serverTimestamp(),
+  });
   if (!phone || payment.amountRupees <= 0) return;
   const phoneSnap = await getDoc(doc(db, "phones", phone));
   if (!phoneSnap.exists()) return;
@@ -176,6 +193,7 @@ export type LiveTimer = {
   endsAt: number;
   extraMinutes: number;
   member: boolean;
+  reward: boolean;
 };
 
 function asLiveTimer(data: Record<string, unknown>): LiveTimer | null {
@@ -197,6 +215,7 @@ function asLiveTimer(data: Record<string, unknown>): LiveTimer | null {
     endsAt,
     extraMinutes,
     member: data.member === true,
+    reward: data.reward === true,
   };
 }
 
@@ -231,13 +250,16 @@ export async function openLiveSession(play: {
   players?: number;
   note?: string;
   member?: boolean;
+  reward?: boolean;
 }) {
   const services = firebaseServices();
   const user = services?.auth.currentUser;
-  if (!services || !user) return;
+  if (!services || !user) throw new Error("Sign in as staff before starting a session.");
   const phone = normalizePhone(play.phone);
-  const planMinutes = Math.max(0, Math.round(play.planMinutes ?? play.bookedMinutes));
-  await setDoc(doc(services.db, "sessions", `${play.stationId}_${play.startedAt}`), {
+  const reward = play.reward === true;
+  const planMinutes = reward ? REWARD_MINUTES : Math.max(0, Math.round(play.planMinutes ?? play.bookedMinutes));
+  const sessionId = `${play.stationId}_${play.startedAt}`;
+  const record = {
     status: "active",
     name: play.name.trim() || "Player",
     phone,
@@ -252,13 +274,48 @@ export async function openLiveSession(play: {
     extraMinutes: 0,
     players: Math.max(1, Math.round(play.players ?? 2)),
     note: (play.note ?? "").slice(0, 120),
-    member: Boolean(play.member),
+    member: reward ? false : Boolean(play.member),
+    reward,
     paidMinutes: 0,
     points: 0,
     amountRupees: 0,
     paymentRecorded: false,
     complimentary: false,
     by: user.uid,
+  };
+  if (!reward) {
+    await setDoc(doc(services.db, "sessions", sessionId), record);
+  } else {
+    if (!phone) throw new Error("Add a mobile number before using the free 30 minutes.");
+    await runTransaction(services.db, async (tx) => {
+      const phoneSnap = await tx.get(doc(services.db, "phones", phone));
+      if (!phoneSnap.exists()) throw new Error("Register this mobile number before using the free 30 minutes.");
+      const customerId = String(phoneSnap.data().customerId ?? "");
+      const weekId = weekKey(play.startedAt);
+      const weekRef = doc(services.db, "weeklyProgress", `${customerId}_${weekId}`);
+      const weekSnap = await tx.get(weekRef);
+      const points = Number(weekSnap.data()?.points ?? 0);
+      if (points < WEEKLY_TARGET) throw new Error(`Needs ${WEEKLY_TARGET} points this week before the free 30 minutes. Currently ${points}.`);
+      if (weekSnap.data()?.redeemedAt) throw new Error("This week's free 30 minutes is already used.");
+      const held = String(weekSnap.data()?.rewardSessionId ?? "");
+      if (held && held !== sessionId) {
+        const heldSnap = await tx.get(doc(services.db, "sessions", held));
+        if (heldSnap.exists() && String(heldSnap.data()?.status ?? "") === "active") {
+          throw new Error("The free 30 minutes is already running on another console.");
+        }
+      }
+      tx.set(doc(services.db, "sessions", sessionId), record);
+      tx.set(weekRef, { customerId, weekId, rewardSessionId: sessionId }, { merge: true });
+    });
+  }
+  const staff = await getDoc(doc(services.db, "staff", user.uid)).catch(() => null);
+  await setDoc(doc(collection(services.db, "auditLogs")), {
+    type: "session-start",
+    sessionId: `${play.stationId}_${play.startedAt}`,
+    after: { name: play.name.trim() || "Player", stationName: play.stationName, bookedMinutes: planMinutes, reward },
+    by: user.uid,
+    byName: String(staff?.data()?.name ?? ""),
+    at: serverTimestamp(),
   });
 }
 
@@ -277,18 +334,32 @@ export async function extendLiveSession(play: {
     bookedMinutes: Math.round(play.bookedMinutes),
     extraMinutes: Math.round(play.extraMinutes),
   });
+  const staff = await getDoc(doc(services.db, "staff", user.uid)).catch(() => null);
+  await setDoc(doc(collection(services.db, "auditLogs")), {
+    type: "session-extend",
+    sessionId: `${play.stationId}_${play.startedAt}`,
+    after: { extraMinutes: Math.round(play.extraMinutes), bookedMinutes: Math.round(play.bookedMinutes) },
+    by: user.uid,
+    byName: String(staff?.data()?.name ?? ""),
+    at: serverTimestamp(),
+  });
 }
 
 export async function recordPaidSession(play: FinishedPlay) {
   const phone = normalizePhone(play.phone);
-  const elapsed = Math.max(0, Math.floor((play.endedAt - play.startedAt) / 60000));
-  const slices = allocatePaidMinutes(play.startedAt, play.endedAt, Math.max(play.bookedMinutes, elapsed));
-  const paidMinutes = slices.reduce((sum, slice) => sum + slice.minutes, 0);
-  if (!phone || paidMinutes <= 0) {
-    await closeWithoutPoints(play, paidMinutes);
-    return phone ? "No paid minutes on this session, so no points were saved." : "No mobile number on this session, so no points were saved.";
+  const clock = clockMinutes(play.startedAt, play.endedAt);
+  if (!phone) {
+    await closeWithoutPoints(play, clock);
+    return "No mobile number on this session, so no points were saved.";
+  }
+  const previewPaid = earningSlices(play.startedAt, play.endedAt, false).reduce((sum, slice) => sum + slice.minutes, 0);
+  if (!play.reward && previewPaid <= 0) {
+    await closeWithoutPoints(play, previewPaid);
+    return "No paid minutes on this session, so no points were saved.";
   }
   const { db, user } = requireDb();
+  const staff = await getDoc(doc(db, "staff", user.uid)).catch(() => null);
+  const byName = String(staff?.data()?.name ?? "");
   const sessionRef = doc(db, "sessions", `${play.stationId}_${play.startedAt}`);
 
   const result = await runTransaction(db, async (tx) => {
@@ -297,7 +368,7 @@ export async function recordPaidSession(play: FinishedPlay) {
     const previousPaid = Number(existingSession.data()?.paidMinutes ?? 0);
     const alreadyClosed = existingSession.exists() && (previousStatus === "completed" || (previousStatus !== "active" && previousPaid > 0));
     if (alreadyClosed) {
-      return { duplicate: true as const, points: 0, paidMinutes, weeklyPoints: 0, name: play.name, banked: 0 };
+      return { duplicate: true as const, points: 0, paidMinutes: previousPaid, weeklyPoints: 0, name: play.name, banked: 0, rewardApplied: false, rewardOpen: false };
     }
 
     const phoneRef = doc(db, "phones", phone);
@@ -307,6 +378,19 @@ export async function recordPaidSession(play: FinishedPlay) {
       : doc(collection(db, "customers"));
     const customerSnap = phoneSnap.exists() ? await tx.get(customerRef) : null;
     const previous = customerSnap?.exists() ? customerSnap.data() : null;
+    const rewardWeekId = weekKey(play.startedAt);
+    const rewardWeekRef = doc(db, "weeklyProgress", `${customerRef.id}_${rewardWeekId}`);
+    const rewardWeekSnap = play.reward ? await tx.get(rewardWeekRef) : null;
+    const heldReward = String(rewardWeekSnap?.data()?.rewardSessionId ?? "");
+    const rewardApplied = Boolean(
+      play.reward
+      && rewardWeekSnap?.exists()
+      && Number(rewardWeekSnap.data()?.points ?? 0) >= WEEKLY_TARGET
+      && !rewardWeekSnap.data()?.redeemedAt
+      && (!heldReward || heldReward === sessionRef.id),
+    );
+    const slices = earningSlices(play.startedAt, play.endedAt, rewardApplied);
+    const paidMinutes = slices.reduce((sum, slice) => sum + slice.minutes, 0);
     const award = awardMinutes(Number(previous?.bankedMinutes ?? 0), slices);
     const name = String((previous?.name ?? play.name.trim()) || "Player");
     const payment = paymentOf(play);
@@ -325,7 +409,8 @@ export async function recordPaidSession(play: FinishedPlay) {
       amountRupees: payment.amountRupees,
       paymentRecorded: payment.paymentRecorded,
       status: "completed",
-      complimentary: false,
+      complimentary: rewardApplied && payment.amountRupees === 0,
+      reward: rewardApplied,
       by: user.uid,
     };
     const weekReads = [];
@@ -365,12 +450,22 @@ export async function recordPaidSession(play: FinishedPlay) {
     if (existingSession.exists()) tx.update(sessionRef, sessionRecord);
     else tx.set(sessionRef, sessionRecord);
 
-    let shownWeekly = 0;
+    let shownWeekly = Number(rewardWeekSnap?.data()?.points ?? 0);
+    let rewardOpen = false;
     const endedWeek = weekKey(play.endedAt);
+    let rewardWeekWritten = false;
+    const releaseHold = Boolean(play.reward && !rewardApplied && heldReward === sessionRef.id);
     for (const { slice, weekRef, weekSnap } of weekReads) {
       const prevPoints = Number(weekSnap.data()?.points ?? 0);
       const nextPoints = prevPoints + slice.points;
-      if (slice.weekId === endedWeek) shownWeekly = nextPoints;
+      const redeeming = rewardApplied && slice.weekId === rewardWeekId;
+      const clearing = releaseHold && slice.weekId === rewardWeekId;
+      if (slice.weekId === endedWeek) {
+        shownWeekly = nextPoints;
+        rewardOpen = nextPoints >= WEEKLY_TARGET && !weekSnap.data()?.redeemedAt && !redeeming;
+      }
+      if (slice.weekId === rewardWeekId && rewardApplied) shownWeekly = nextPoints;
+      if (redeeming || clearing) rewardWeekWritten = true;
       tx.set(
         weekRef,
         {
@@ -379,12 +474,28 @@ export async function recordPaidSession(play: FinishedPlay) {
           weekId: slice.weekId,
           minutes: Number(weekSnap.data()?.minutes ?? 0) + slice.minutes,
           points: nextPoints,
-          rewardEligible: nextPoints >= WEEKLY_TARGET,
-          redeemedAt: weekSnap.data()?.redeemedAt ?? null,
+          rewardEligible: nextPoints >= WEEKLY_TARGET && !(redeeming || weekSnap.data()?.redeemedAt),
+          redeemedAt: redeeming ? Date.now() : (weekSnap.data()?.redeemedAt ?? null),
+          ...(redeeming ? { redeemedBy: user.uid, rewardSessionId: deleteField() } : {}),
+          ...(clearing ? { rewardSessionId: deleteField() } : {}),
         },
         { merge: true },
       );
     }
+    if (rewardApplied && !rewardWeekWritten) {
+      tx.set(rewardWeekRef, { redeemedAt: Date.now(), redeemedBy: user.uid, rewardSessionId: deleteField(), rewardEligible: false }, { merge: true });
+    } else if (releaseHold && !rewardWeekWritten) {
+      tx.update(rewardWeekRef, { rewardSessionId: deleteField() });
+    }
+
+    tx.set(doc(collection(db, "auditLogs")), {
+      type: "session-end",
+      sessionId: sessionRef.id,
+      after: { name, stationName: play.stationName, paidMinutes, amountRupees: payment.amountRupees, points: award.points, reward: rewardApplied },
+      by: user.uid,
+      byName,
+      at: serverTimestamp(),
+    });
 
     if (award.points > 0) {
       tx.set(doc(collection(db, "pointsLedger")), {
@@ -407,44 +518,22 @@ export async function recordPaidSession(play: FinishedPlay) {
       weeklyPoints: shownWeekly,
       name,
       banked: award.bankedMinutes,
+      rewardApplied,
+      rewardOpen,
     };
   });
 
   if (result.duplicate) return "This session was already saved.";
   const toward = result.banked ?? 0;
   const weekly = result.weeklyPoints;
-  const unlocked = weekly >= WEEKLY_TARGET;
-  return `${result.name}: ${result.paidMinutes} paid min, +${result.points} point${result.points === 1 ? "" : "s"}. Week ${Math.min(weekly, WEEKLY_TARGET)}/${WEEKLY_TARGET}.${unlocked ? " Free 30 minutes is ready." : ""} ${toward} min toward the next point.`;
-}
-
-export async function redeemReward(customerId: string) {
-  const { db, user } = requireDb();
-  const weekId = weekKey(Date.now());
-  const weekRef = doc(db, "weeklyProgress", `${customerId}_${weekId}`);
-  await runTransaction(db, async (tx) => {
-    const weekSnap = await tx.get(weekRef);
-    const points = Number(weekSnap.data()?.points ?? 0);
-    if (points < WEEKLY_TARGET) throw new Error(`Needs ${WEEKLY_TARGET} points this week. Currently ${points}.`);
-    if (weekSnap.data()?.redeemedAt) throw new Error("This week's free 30 minutes is already used.");
-    tx.update(weekRef, { redeemedAt: Date.now(), redeemedBy: user.uid });
-    tx.set(doc(collection(db, "pointsLedger")), {
-      customerId,
-      phoneE164: weekSnap.data()?.phoneE164 ?? "",
-      type: "redeem",
-      points: 0,
-      minutes: 30,
-      weekId,
-      at: serverTimestamp(),
-      by: user.uid,
-    });
-    tx.set(doc(collection(db, "auditLogs")), {
-      type: "redeem",
-      customerId,
-      weekId,
-      by: user.uid,
-      at: serverTimestamp(),
-    });
-  });
+  const pointText = `+${result.points} point${result.points === 1 ? "" : "s"}. ${toward} min toward the next point.`;
+  if (result.rewardApplied) {
+    return `${result.name}: free ${REWARD_MINUTES} minutes used for this week. ${result.paidMinutes} min after that, ${pointText} Week total ${weekly}.`;
+  }
+  if (play.reward) {
+    return `${result.name}: the free 30 minutes was not available, so the full visit counted. ${result.paidMinutes} paid min, ${pointText} Week total ${weekly}.`;
+  }
+  return `${result.name}: ${result.paidMinutes} paid min, ${pointText} Week ${weekly}.${result.rewardOpen ? " Free 30 minutes is ready." : ""}`;
 }
 
 export type StaffLookup =

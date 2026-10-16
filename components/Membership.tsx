@@ -5,58 +5,59 @@ import Link from "next/link";
 import { SectionIntro } from "@/components/SectionIntro";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
+import { memberPlans } from "@/lib/prices";
 
 export function Membership() {
   const prices = useLivePrices();
-  const each = prices.memberSessions ? Math.round(prices.memberRupees / prices.memberSessions) : 0;
-  const perks = [
-    `${prices.memberSessions} sessions in the month`,
-    `${formatRupees(each)} a session instead of ${formatRupees(prices.station)}`,
-    "Stations 01 to 04",
-  ];
+  const plans = memberPlans(prices);
 
   return (
     <section id="membership" className="border-t border-white/10 bg-navy/40 py-20 sm:py-28">
       <div className="shell">
         <SectionIntro
-          eyebrow="Monthly plan"
+          eyebrow="Membership"
           title={
             <>
-              {formatRupees(prices.memberRupees)} for <span className="text-gradient">{prices.memberSessions} sessions.</span>
+              Monthly, quarterly, <span className="text-gradient">or yearly.</span>
             </>
           }
         >
-          A PS5 station is {formatRupees(prices.station)} an hour if you walk in. This plan brings Stations 01 to 04
-          to {formatRupees(each)} a session. The car simulator stays {formatRupees(prices.simulator)} an hour.
+          A walk-in PS5 hour is {formatRupees(prices.station)}. A plan covers Stations 01 to 04. The car simulator
+          stays {formatRupees(prices.simulator)} an hour and the private room stays {formatRupees(prices.privateRoom)}.
         </SectionIntro>
 
-        <article className="panel panel-featured mt-12 grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[auto_1fr_auto]">
-          <div>
-            <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-cyan uppercase">Each month</p>
-            <p className="mt-2 font-tech text-6xl leading-none text-paper sm:text-7xl">{formatRupees(prices.memberRupees)}</p>
-            <p className="mt-3 text-sm text-mist">
-              {prices.memberSessions} sessions · {formatRupees(each)} each
-            </p>
-          </div>
-          <ul className="grid gap-3">
-            {perks.map((perk) => (
-              <li key={perk} className="flex items-start gap-2 text-sm text-paper">
-                <Check size={16} className="mt-0.5 shrink-0 text-cyan" aria-hidden="true" />
-                {perk}
+        <ul className="mt-12 grid gap-5 lg:grid-cols-3">
+          {plans.map((item) => {
+            const each = item.sessions ? Math.round(item.rupees / item.sessions) : 0;
+            const saved = prices.station * item.sessions - item.rupees;
+            const length = item.months === 1 ? "1 month" : item.months === 3 ? "3 months" : "12 months";
+            return (
+              <li key={item.id}>
+                <article className={`panel flex h-full flex-col p-6 sm:p-8 ${item.id === "quarterly" ? "panel-featured" : ""}`}>
+                  <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-cyan uppercase">{item.label}</p>
+                  <p className="mt-3 font-tech text-5xl leading-none text-paper">{formatRupees(item.rupees)}</p>
+                  <p className="mt-2 text-sm text-mist">{item.sessions} sessions · {length} · {formatRupees(each)} each</p>
+                  <ul className="mt-6 grid flex-1 gap-3">
+                    {[
+                      `${item.sessions} plays on Stations 01 to 04`,
+                      `Valid for ${length} from the start date`,
+                      saved > 0 ? `Saves ${formatRupees(saved)} against walk-in hours` : "Stations 01 to 04",
+                    ].map((perk) => (
+                      <li key={perk} className="flex items-start gap-2 text-sm text-paper">
+                        <Check size={16} className="mt-0.5 shrink-0 text-cyan" aria-hidden="true" />
+                        {perk}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={`/book?plan=${item.id}`} className="btn btn-primary mt-8 w-full">
+                    Ask to join
+                  </Link>
+                </article>
               </li>
-            ))}
-            <li className="flex items-start gap-2 text-sm text-paper">
-              <Check size={16} className="mt-0.5 shrink-0 text-cyan" aria-hidden="true" />
-              Saves {formatRupees(prices.station * prices.memberSessions - prices.memberRupees)} against {prices.memberSessions} walk-in hours
-            </li>
-          </ul>
-          <div className="grid gap-2 lg:justify-items-end">
-            <Link href="/book?plan=monthly" className="btn btn-primary w-full lg:w-auto">
-              Ask to join
-            </Link>
-            <p className="text-xs text-mist lg:text-right">Pay and join at the counter.</p>
-          </div>
-        </article>
+            );
+          })}
+        </ul>
+        <p className="mt-6 text-sm text-mist">Pay and join at the counter. Changing a plan price does not change members who already joined.</p>
       </div>
     </section>
   );

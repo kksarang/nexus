@@ -16,7 +16,7 @@ export function LoyaltyHome() {
           {[
             [`1 point`, `Every ${POINT_MINUTES} paid minutes. Leftover minutes carry forward.`],
             [`${WEEKLY_TARGET} points`, "Earned Monday 00:00 to Sunday 23:59, India time."],
-            [`${REWARD_MINUTES} min`, "One free session that week. Lifetime points stay on the card."],
+            [`${REWARD_MINUTES} min`, "One free session that week. Those minutes do not earn points. Lifetime points stay on the card."],
           ].map(([title, body]) => (
             <li key={title} className="border border-white/10 bg-[#101624] p-4">
               <p className="font-tech text-xl text-paper">{title}</p>

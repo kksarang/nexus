@@ -5,7 +5,8 @@ import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
 import { hourlyFor } from "@/lib/prices";
-import { memberships, site, stations, whatsappLink } from "@/lib/site";
+import { memberPlan, memberPlans } from "@/lib/prices";
+import { site, stations, whatsappLink } from "@/lib/site";
 
 type Mode = "station" | "membership";
 
@@ -70,7 +71,7 @@ export function BookingForm() {
     stationChoice ?? (stations.some((item) => item.id === presetStation) ? presetStation : "any");
   const plan =
     planChoice ??
-    (memberships.some((item) => item.key === presetPlan) ? presetPlan : memberships[0].key);
+    (memberPlans().some((item) => item.id === presetPlan) ? presetPlan : "monthly");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
@@ -95,14 +96,13 @@ export function BookingForm() {
 
   function buildMessage() {
     if (mode === "membership") {
-      const chosen = memberships.find((item) => item.key === plan);
-      const tier = chosen?.tier ?? plan;
+      const chosen = memberPlan(plan, prices);
       return [
-        "Hi Nexus Playzone, I would like to join a monthly membership.",
+        "Hi Nexus Playzone, I would like to join a membership.",
         `Name: ${name.trim()}`,
         `Phone: ${phone.trim()}`,
-        `Plan: ${tier}`,
-        chosen ? `Amount: ${formatRupees(prices.memberRupees)} for ${prices.memberSessions} sessions` : "",
+        `Plan: ${chosen.label}`,
+        `Amount: ${formatRupees(chosen.rupees)} for ${chosen.sessions} sessions over ${chosen.months === 1 ? "1 month" : `${chosen.months} months`}`,
         date ? `Start date: ${formatDate(date)}` : "",
         notes.trim() ? `Notes: ${notes.trim()}` : "",
       ]
@@ -313,13 +313,13 @@ export function BookingForm() {
             <label className="field">
               <span className="field-label">Membership plan</span>
               <select className="desk-input" value={plan} onChange={(event) => setPlan(event.target.value)}>
-                {memberships.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.tier}
+                {memberPlans(prices).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label} · {formatRupees(option.rupees)} · {option.sessions} sessions
                   </option>
                 ))}
               </select>
-              <span className="mt-2 block text-xs text-mist">{formatRupees(prices.memberRupees)} for {prices.memberSessions} sessions on Stations 01 to 04.</span>
+              <span className="mt-2 block text-xs text-mist">{memberPlan(plan, prices).label}: {formatRupees(memberPlan(plan, prices).rupees)} for {memberPlan(plan, prices).sessions} sessions on Stations 01 to 04.</span>
             </label>
             <label className="field">
               <span className="field-label">Start date</span>

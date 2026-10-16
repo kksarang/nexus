@@ -81,11 +81,29 @@ export const memberships = [
   {
     key: "monthly",
     tier: "Monthly",
-    fit: "20 sessions on Stations 01 to 04. The car simulator and private room stay at their hourly rates.",
+    months: 1,
+    fit: "20 sessions on Stations 01 to 04 for one month.",
     rupees: 2000,
     sessions: 20,
-    perks: ["20 sessions in the month", "₹100 a session instead of ₹160", "Stations 01 to 04"],
+    featured: false,
+  },
+  {
+    key: "quarterly",
+    tier: "Quarterly",
+    months: 3,
+    fit: "60 sessions on Stations 01 to 04 for three months.",
+    rupees: 5400,
+    sessions: 60,
     featured: true,
+  },
+  {
+    key: "yearly",
+    tier: "Yearly",
+    months: 12,
+    fit: "240 sessions on Stations 01 to 04 for twelve months.",
+    rupees: 16800,
+    sessions: 240,
+    featured: false,
   },
 ] as const;
 
@@ -115,7 +133,7 @@ export const games = [
   {
     title: "EA Sports FC",
     genre: "Football",
-    modes: "1–2 players · Online",
+    modes: "Latest edition · 1–2 players",
     image: "/images/games/game-fc.jpg",
     alt: "A football on a green floodlit pitch",
     accent: "#3DDC6A",
@@ -123,7 +141,7 @@ export const games = [
   {
     title: "WWE 2K",
     genre: "Wrestling",
-    modes: "1–4 players",
+    modes: "Latest 2K · 1–4 players",
     image: "/images/games/game-wwe.jpg",
     alt: "A wrestling ring under red and gold lights",
     accent: "#FF3B30",
@@ -131,13 +149,13 @@ export const games = [
   {
     title: "GTA V",
     genre: "Open world",
-    modes: "Solo · Online",
+    modes: "Story · GTA Online",
     image: "/images/games/game-gta.jpg",
     alt: "A car on an amber night street",
     accent: "#FF9F1A",
   },
   {
-    title: "Marvel’s Spider-Man",
+    title: "Marvel’s Spider-Man 2",
     genre: "Action adventure",
     modes: "Solo story",
     image: "/images/games/game-spiderman.jpg",
@@ -145,16 +163,24 @@ export const games = [
     accent: "#4C6FFF",
   },
   {
-    title: "Racing games",
+    title: "Star Wars: Galactic Racer",
     genre: "Racing",
-    modes: "Solo · Split-screen",
+    modes: "Solo · 2026",
     image: "/images/games/game-racing.jpg",
     alt: "A car on a track with lime light trails",
     accent: "#D6FF3F",
   },
+  {
+    title: "Ghost of Yōtei",
+    genre: "Action",
+    modes: "Solo story · PS5",
+    image: "/images/ps5-console.jpg",
+    alt: "A PlayStation 5 console on a dark desk",
+    accent: "#F5C542",
+  },
 ] as const;
 
-export const gameGenres = ["All", "Football", "Wrestling", "Open world", "Action adventure", "Racing"] as const;
+export const gameGenres = ["All", "Football", "Wrestling", "Open world", "Action adventure", "Racing", "Action"] as const;
 
 export const stations = [
   {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDesk } from "@/components/admin/AdminShell";
 import { useLivePrices } from "@/components/useLivePrices";
+import { memberPlan, memberPlans } from "@/lib/prices";
 import { downloadCsv, formatIst } from "@/lib/adminStats";
 import {
   cancelMembership,
@@ -16,7 +17,8 @@ import {
   listMemberships,
   loadUses,
   memberState,
-  oneMonthFrom,
+  planEnd,
+  planLabel,
   sessionsLeft,
   undoUse,
   spendSessions,
@@ -62,6 +64,11 @@ function PlayMarks({ item, now, editable, busy, onMark }: { item: Membership; no
     <div>
       <h3 className="text-base text-paper">{item.sessionsUsed} of {total} plays marked</h3>
       <p className="mt-1 text-xs text-mist">Each box is one play on Stations 01 to 04. Mark the next open box when they play, or start their session on the floor and it marks itself.</p>
+      {total > 40 ? (
+        <button type="button" className="btn btn-secondary mt-3" disabled={!canMark || busy} onClick={onMark}>
+          {canMark ? `Mark play ${item.sessionsUsed + 1}` : "No open play to mark"}
+        </button>
+      ) : (
       <ol className="mt-3 flex flex-wrap gap-2">
         {Array.from({ length: total }, (_, index) => {
           const used = index < item.sessionsUsed;
@@ -81,19 +88,24 @@ function PlayMarks({ item, now, editable, busy, onMark }: { item: Membership; no
           );
         })}
       </ol>
+      )}
     </div>
   );
 }
 
 function AddMember({ now, onDone }: { now: number; onDone: (text: string) => void }) {
   const prices = useLivePrices();
+  const plans = memberPlans(prices);
+  const [planId, setPlanId] = useState<(typeof plans)[number]["id"]>("monthly");
+  const chosen = memberPlan(planId, prices);
   const [amountEdited, setAmountEdited] = useState<string | null>(null);
   const [form, setForm] = useState({ phone: "", name: "", start: "", note: "", consent: false });
-  const amount = amountEdited ?? String(prices.memberRupees);
+  const amount = amountEdited ?? String(chosen.rupees);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const start = form.start || (now ? istDateInput(now) : "");
   const startAt = istDateStart(start);
+  const endAt = startAt === null ? 0 : planEnd(startAt, chosen.months);
 
   return (
     <form
@@ -103,17 +115,33 @@ function AddMember({ now, onDone }: { now: number; onDone: (text: string) => voi
         if (startAt === null) return setMessage({ ok: false, text: "Pick the start date." });
         setBusy(true);
         setMessage(null);
-        void createMembership({ phone: form.phone, name: form.name, amountPaid: Number(amount || 0), startAt, consent: form.consent, note: form.note })
-          .then(() => onDone(`Membership added. ${prices.memberSessions} plays valid until ${formatDay(oneMonthFrom(startAt))}.`))
+        void createMembership({ phone: form.phone, name: form.name, amountPaid: Number(amount || 0), startAt, consent: form.consent, note: form.note, plan: chosen.id })
+          .then(() => onDone(`${chosen.label} membership added. ${chosen.sessions} plays valid until ${formatDay(endAt)}.`))
           .catch((reason: unknown) => setMessage({ ok: false, text: reason instanceof Error ? reason.message : "Could not add the member." }))
           .finally(() => setBusy(false));
       }}
     >
       <div>
-        <h2 className="text-xl text-paper">Add a monthly member</h2>
+        <h2 className="text-xl text-paper">Add a member</h2>
         <p className="mt-1 text-sm text-mist">
-          {prices.memberSessions} plays on Stations 01 to 04, valid for one month from the start date. The plan price is ₹{prices.memberRupees.toLocaleString("en-IN")}. If the number is already registered, the existing player is used.
+          {chosen.label}: {chosen.sessions} plays on Stations 01 to 04, valid for {chosen.months === 1 ? "1 month" : `${chosen.months} months`}. The plan price is ₹{chosen.rupees.toLocaleString("en-IN")}. If the number is already registered, the existing player is used.
         </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {plans.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={planId === item.id}
+            className={`rounded-full border px-3 py-1.5 text-sm ${planId === item.id ? "border-cyan bg-cyan text-ink" : "border-white/15 text-paper"}`}
+            onClick={() => {
+              setPlanId(item.id);
+              setAmountEdited(null);
+            }}
+          >
+            {item.label} · ₹{item.rupees.toLocaleString("en-IN")} · {item.sessions} plays
+          </button>
+        ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm text-mist">Mobile number<input className="desk-input mt-1" inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} required /></label>
@@ -126,7 +154,7 @@ function AddMember({ now, onDone }: { now: number; onDone: (text: string) => voi
         <input type="checkbox" className="mt-1" checked={form.consent} onChange={(event) => setForm({ ...form, consent: event.target.checked })} />
         A new player agrees to store their name and mobile number. Not needed for players already registered.
       </label>
-      {startAt !== null ? <p className="text-sm text-paper">Valid {formatDay(startAt)} to {formatDay(oneMonthFrom(startAt))}. Leave the amount at 0 if nothing was collected yet; only collected amounts count as revenue.</p> : null}
+      {startAt !== null ? <p className="text-sm text-paper">Valid {formatDay(startAt)} to {formatDay(endAt)}. Leave the amount at 0 if nothing was collected yet; only collected amounts count as revenue.</p> : null}
       <Message value={message} />
       <div className="flex gap-2">
         <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Saving…" : "Add membership"}</button>
@@ -178,6 +206,7 @@ function MemberDetail({ item, now, editable, onChanged }: { item: Membership; no
       </div>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
+          ["Plan", planLabel(item.plan)],
           ["Sessions left", `${sessionsLeft(item)} of ${item.sessionsTotal}`],
           ["Valid", `${formatDay(item.startAt)} – ${formatDay(item.endAt)}`],
           ["Collected", `₹${item.amountPaid.toLocaleString("en-IN")}${item.amountPaid < item.priceRupees ? ` of ₹${item.priceRupees.toLocaleString("en-IN")}` : ""}`],
@@ -318,7 +347,7 @@ export function MembersDesk() {
         <div>
           <h1 className="flex items-center gap-2 text-4xl tracking-wide text-paper uppercase"><BadgeCheck size={26} aria-hidden="true" /> Members</h1>
           <p className="mt-2 max-w-2xl text-sm text-mist">
-            Monthly plan: ₹{prices.memberRupees.toLocaleString("en-IN")} for {prices.memberSessions} plays on Stations 01 to 04. Only staff can add members. Visitors can only read about the plan on the website.
+            Monthly, quarterly, and yearly plans for Stations 01 to 04. Prices and play counts are set in Utility. Only staff can add members.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -331,8 +360,8 @@ export function MembersDesk() {
             type="button"
             className="btn btn-secondary"
             onClick={() => downloadCsv("nexus-members.csv", [
-              ["Name", "Mobile", "Status", "Sessions used", "Sessions total", "Start", "Last day", "Collected ₹", "Note"],
-              ...rows.map((item) => [item.name, item.phone, stateLabel[memberState(item, now)], item.sessionsUsed, item.sessionsTotal, formatDay(item.startAt), formatDay(item.endAt), item.amountPaid, item.note]),
+              ["Name", "Mobile", "Plan", "Status", "Sessions used", "Sessions total", "Start", "Last day", "Collected ₹", "Note"],
+              ...rows.map((item) => [item.name, item.phone, planLabel(item.plan), stateLabel[memberState(item, now)], item.sessionsUsed, item.sessionsTotal, formatDay(item.startAt), formatDay(item.endAt), item.amountPaid, item.note]),
             ])}
           >
             <Download size={15} aria-hidden="true" /> Download
@@ -384,7 +413,7 @@ export function MembersDesk() {
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="w-full min-w-[46rem] text-left text-sm">
           <thead className="bg-[#101624] text-xs text-mist">
-            <tr>{["Member", "Mobile", "Sessions left", "Last day", "Status", ""].map((heading, index) => <th key={heading || index} className="px-4 py-3 font-medium">{heading}</th>)}</tr>
+            <tr>{["Member", "Plan", "Mobile", "Sessions left", "Last day", "Status", ""].map((heading, index) => <th key={heading || index} className="px-4 py-3 font-medium">{heading}</th>)}</tr>
           </thead>
           <tbody>
             {visible.length ? visible.map((item) => {
@@ -393,15 +422,18 @@ export function MembersDesk() {
               return (
                 <tr key={item.id} className={`border-t border-white/10 ${selected === item.id ? "bg-cyan/10" : ""}`}>
                   <td className="px-4 py-3 font-medium text-paper">{item.name}</td>
+                  <td className="px-4 py-3 text-paper">{planLabel(item.plan)}</td>
                   <td className="px-4 py-3 text-mist">{item.phone}</td>
                   <td className="px-4 py-3">
                     <div className="grid gap-1">
                       <span className="text-paper">{item.sessionsUsed} marked · {left} left</span>
-                      <span className="flex max-w-52 flex-wrap gap-0.5" aria-hidden="true">
-                        {Array.from({ length: item.sessionsTotal }, (_, index) => (
-                          <span key={index} className={`h-2 w-2 rounded-sm ${index < item.sessionsUsed ? "bg-cyan" : "bg-white/15"}`} />
-                        ))}
-                      </span>
+                      {item.sessionsTotal <= 24 ? (
+                        <span className="flex max-w-52 flex-wrap gap-0.5" aria-hidden="true">
+                          {Array.from({ length: item.sessionsTotal }, (_, index) => (
+                            <span key={index} className={`h-2 w-2 rounded-sm ${index < item.sessionsUsed ? "bg-cyan" : "bg-white/15"}`} />
+                          ))}
+                        </span>
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-mist">{formatDay(item.endAt)}</td>

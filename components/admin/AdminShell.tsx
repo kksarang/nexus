@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   BarChart3,
   Gift,
+  ClipboardList,
   History,
   IndianRupee,
   LayoutDashboard,
@@ -57,13 +58,14 @@ export function useDesk() {
   return value;
 }
 
-const links: { href: string; label: string; icon: typeof LayoutDashboard; module: ModuleId | "home" | "admin" }[] = [
+const links: { href: string; label: string; icon: typeof LayoutDashboard; module: ModuleId | "home" | "admin" | "all" }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, module: "home" },
   { href: "/admin/room", label: "Start a Session", icon: PlayCircle, module: "gaming" },
   { href: "/admin/players", label: "Players / Customers", icon: Users, module: "customers" },
-  { href: "/admin/members", label: "Monthly Members", icon: BadgeCheck, module: "members" },
+  { href: "/admin/members", label: "Memberships", icon: BadgeCheck, module: "members" },
   { href: "/admin/sessions", label: "Live Sessions", icon: Timer, module: "gaming" },
   { href: "/admin/history", label: "Session History", icon: History, module: "history" },
+  { href: "/admin/activity", label: "Activity", icon: ClipboardList, module: "all" },
   { href: "/admin/stations", label: "Consoles / Stations", icon: Monitor, module: "gaming" },
   { href: "/admin/revenue", label: "Revenue", icon: IndianRupee, module: "revenue" },
   { href: "/admin/loyalty", label: "Loyalty Points", icon: Gift, module: "loyalty" },
@@ -112,7 +114,7 @@ function NavLinks({
   return (
     <nav className="mt-4 grid gap-1 overflow-y-auto" aria-label="Admin">
       {links
-        .filter((item) => (item.module === "home" || item.module === "admin" ? isAdmin : isAdmin || sees(access, item.module)))
+        .filter((item) => item.module === "all" || (item.module === "home" || item.module === "admin" ? isAdmin : isAdmin || sees(access, item.module)))
         .map((item) => {
           const active = pathname !== "" && (item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href));
           const Icon = item.icon;

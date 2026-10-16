@@ -1,13 +1,11 @@
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where } from "firebase/firestore";
 import { firebaseServices } from "@/lib/firebaseClient";
 import { millisOf, normalizePhone, phoneE164 } from "@/lib/loyalty";
-import { readPrices } from "@/lib/prices";
-import { memberships as plans } from "@/lib/site";
+import { memberPlan, readPrices, type MemberPlan } from "@/lib/prices";
 
 const IST = 330 * 60 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
 
-export const plan = plans[0];
 export const memberStations = ["01", "02", "03", "04"];
 
 export type Membership = {
@@ -19,6 +17,7 @@ export type Membership = {
   sessionsUsed: number;
   priceRupees: number;
   amountPaid: number;
+  plan: MemberPlan["id"];
   startAt: number;
   endAt: number;
   status: "active" | "cancelled";
@@ -65,6 +64,7 @@ function asMembership(id: string, data: Record<string, unknown>): Membership {
     sessionsUsed: Number(data.sessionsUsed ?? 0),
     priceRupees: Number(data.priceRupees ?? 0),
     amountPaid: Number(data.amountPaid ?? 0),
+    plan: data.plan === "quarterly" || data.plan === "yearly" ? data.plan : "monthly",
     startAt: Number(data.startAt ?? 0),
     endAt: Number(data.endAt ?? 0),
     status: data.status === "cancelled" ? "cancelled" : "active",
@@ -93,11 +93,23 @@ export function istDateStart(value: string) {
   return Date.UTC(year, month - 1, day) - IST;
 }
 
+/** Valid through the moment before the same date `months` later, IST. */
+export function planEnd(startAt: number, months: number) {
+  const count = Math.max(1, Math.round(months));
+  const shifted = new Date(startAt + IST);
+  const next = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + count, shifted.getUTCDate()) - IST;
+  return next - 1;
+}
+
 /** Valid through the day before the same date next month, IST. */
 export function oneMonthFrom(startAt: number) {
-  const shifted = new Date(startAt + IST);
-  const next = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate()) - IST;
-  return next - 1;
+  return planEnd(startAt, 1);
+}
+
+export function planLabel(id: string) {
+  if (id === "quarterly") return "Quarterly";
+  if (id === "yearly") return "Yearly";
+  return "Monthly";
 }
 
 export function istDateInput(ms: number) {
@@ -148,7 +160,7 @@ export async function loadUses(membershipId: string): Promise<MembershipUse[]> {
     .sort((a, b) => b.at - a.at);
 }
 
-export async function createMembership(input: { phone: string; name: string; amountPaid: number; startAt: number; consent: boolean; note: string }) {
+export async function createMembership(input: { phone: string; name: string; amountPaid: number; startAt: number; consent: boolean; note: string; plan?: string }) {
   const phone = normalizePhone(input.phone);
   if (!phone) throw new Error("Enter a 10-digit mobile number.");
   if (!Number.isInteger(input.amountPaid) || input.amountPaid < 0) throw new Error("Enter the amount collected in whole rupees.");
@@ -164,8 +176,9 @@ export async function createMembership(input: { phone: string; name: string; amo
     if (!input.name.trim()) throw new Error("This number is new. Add the player's name.");
     if (!input.consent) throw new Error("Tick consent to store the new player's name and number.");
   }
-  const endAt = oneMonthFrom(input.startAt);
   const prices = await readPrices();
+  const chosen = memberPlan(input.plan ?? "monthly", prices);
+  const endAt = planEnd(input.startAt, chosen.months);
   const memberRef = doc(collection(db, "memberships"));
   try {
     await runTransaction(db, async (tx) => {
@@ -195,10 +208,10 @@ export async function createMembership(input: { phone: string; name: string; amo
         customerId: id,
         name,
         phone,
-        plan: plan.key,
-        sessionsTotal: prices.memberSessions,
+        plan: chosen.id,
+        sessionsTotal: chosen.sessions,
         sessionsUsed: 0,
-        priceRupees: prices.memberRupees,
+        priceRupees: chosen.rupees,
         amountPaid: input.amountPaid,
         startAt: input.startAt,
         endAt,
@@ -212,7 +225,7 @@ export async function createMembership(input: { phone: string; name: string; amo
         type: "member-add",
         customerId: id,
         membershipId: memberRef.id,
-        after: { name, phone, amountPaid: input.amountPaid, endAt },
+        after: { name, phone, amountPaid: input.amountPaid, endAt, plan: chosen.label, sessions: chosen.sessions },
         by: user.uid,
         at: serverTimestamp(),
       });

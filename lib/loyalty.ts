@@ -89,13 +89,29 @@ export function chargeForSession(input: {
   endedAt: number;
   planMinutes: number;
   member: boolean;
+  reward?: boolean;
 }) {
   const used = usedMinutes(input.startedAt, input.endedAt);
   const plan = Math.max(0, Math.round(input.planMinutes));
-  const billable = input.member ? Math.max(0, used - plan) : used;
+  const covered = input.reward ? Math.min(REWARD_MINUTES, used) : input.member ? plan : 0;
+  const billable = Math.max(0, used - covered);
   const rate = Number.isFinite(input.hourlyRupees) ? input.hourlyRupees : 0;
   const amount = rate > 0 ? Math.round((billable / 60) * rate) : 0;
   return { usedMinutes: used, billableMinutes: billable, amount };
+}
+
+export function clockMinutes(startedAt: number, endedAt: number) {
+  return Math.max(0, Math.floor((endedAt - startedAt) / 60000));
+}
+
+/** Minutes that earn points. A reward covers the first 30 minutes, and those minutes earn nothing. */
+export function earningSlices(startedAt: number, endedAt: number, reward: boolean) {
+  const clock = clockMinutes(startedAt, endedAt);
+  const skip = reward ? Math.min(REWARD_MINUTES, clock) : 0;
+  const paid = clock - skip;
+  if (paid <= 0) return [];
+  const pointStart = startedAt + skip * 60000;
+  return allocatePaidMinutes(pointStart, pointStart + paid * 60000, paid);
 }
 
 export function allocatePaidMinutes(startedAt: number, endedAt: number, bookedMinutes: number) {
@@ -144,6 +160,7 @@ export type FinishedPlay = {
   endedAt: number;
   bookedMinutes: number;
   collectedRupees?: number;
+  reward?: boolean;
 };
 
 export function pointsProgress(weeklyPoints: number, redeemed: boolean) {

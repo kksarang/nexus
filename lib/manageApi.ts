@@ -225,7 +225,17 @@ export async function saveNotice(rawText: string, active: boolean, until: number
   }
 }
 
-export type ActivityRow = { id: string; type: string; at: number; by: string; summary: string };
+export type ActivityRow = { id: string; type: string; at: number; by: string; byName: string; summary: string; sessionId: string; play: string };
+
+function playLabel(data: Record<string, unknown>) {
+  const after = (data.after ?? {}) as Record<string, unknown>;
+  const type = String(data.type ?? "");
+  if (type === "session-start") return `${String(after.bookedMinutes ?? 0)} min booked`;
+  if (type === "session-end") return `${String(after.paidMinutes ?? 0)} min played`;
+  if (type === "session-extend") return `${String(after.bookedMinutes ?? 0)} min booked`;
+  if (type === "member-use") return `${String(after.count ?? 1)} play marked`;
+  return "";
+}
 
 function summarize(data: Record<string, unknown>) {
   const after = (data.after ?? {}) as Record<string, unknown>;
@@ -239,17 +249,22 @@ function summarize(data: Record<string, unknown>) {
   if (type === "staff-access") return "Changed what an office login can see";
   if (type === "staff-remove") return `Removed desk access for ${String(before.name ?? "")}`;
   if (type === "staff-rename") return `Renamed staff to ${String(after.name ?? "")}`;
-  if (type === "prices") return `Prices updated · stations ₹${String(after.station ?? "")} · simulator ₹${String(after.simulator ?? "")} · room ₹${String(after.privateRoom ?? "")} · membership ₹${String(after.memberRupees ?? "")} for ${String(after.memberSessions ?? "")} plays`;
+  if (type === "prices") return `Prices updated · stations ₹${String(after.station ?? "")} · simulator ₹${String(after.simulator ?? "")} · room ₹${String(after.privateRoom ?? "")} · monthly ₹${String(after.memberRupees ?? "")}/${String(after.memberSessions ?? "")} · quarterly ₹${String(after.quarterRupees ?? "")}/${String(after.quarterSessions ?? "")} · yearly ₹${String(after.yearRupees ?? "")}/${String(after.yearSessions ?? "")}`;
   if (type === "amount-session") return `Session amount for ${String(after.name ?? "")} changed to ₹${String(after.amountRupees ?? "")}`;
   if (type === "amount-member") return `Membership amount for ${String(after.name ?? "")} changed to ₹${String(after.amountPaid ?? "")}`;
   if (type === "notice-on") return `Website notice on: ${String(after.text ?? "")}`;
   if (type === "notice-off") return "Website notice turned off";
   if (type === "redeem") return "Free 30 minutes redeemed";
-  if (type === "member-add") return `Monthly membership for ${String(after.name ?? "")} ${String(after.phone ?? "")} · ₹${String(after.amountPaid ?? 0)} received`.trim();
+  if (type === "member-add") return `${String(after.plan ?? "Monthly")} membership for ${String(after.name ?? "")} ${String(after.phone ?? "")} · ${String(after.sessions ?? "")} plays · ₹${String(after.amountPaid ?? 0)} received`.trim();
   if (type === "member-use") return `Membership used: ${String(after.count ?? 1)} on Station ${String(after.stationId ?? "")} · ${String(after.left ?? "")} left`;
   if (type === "member-undo") return `Membership session given back: ${String(data.reason ?? "")}`;
   if (type === "member-extend") return `Membership end date changed: ${String(data.reason ?? "")}`;
   if (type === "member-cancel") return `Membership cancelled: ${String(data.reason ?? "")}`;
+  if (type === "session-start") return after.reward === true
+    ? `${String(after.name ?? "Player")} started the free 30 min reward on ${String(after.stationName ?? "a console")}`
+    : `${String(after.name ?? "Player")} started on ${String(after.stationName ?? "a console")} for ${String(after.bookedMinutes ?? 0)} min`;
+  if (type === "session-end") return `${String(after.name ?? "Player")} finished on ${String(after.stationName ?? "a console")} · ${after.reward === true ? "free 30 min reward · " : ""}${String(after.paidMinutes ?? 0)} min counted${Number(after.amountRupees ?? 0) > 0 ? ` · ₹${String(after.amountRupees)}` : ""}`;
+  if (type === "session-extend") return `Added time · now ${String(after.bookedMinutes ?? 0)} min booked`;
   return type || "Change";
 }
 
@@ -261,8 +276,32 @@ export async function loadActivity(count = 60): Promise<ActivityRow[]> {
     type: String(item.data().type ?? ""),
     at: millisOf(item.data().at),
     by: String(item.data().by ?? ""),
+    byName: String(item.data().byName ?? ""),
     summary: summarize(item.data()),
+    sessionId: String(item.data().sessionId ?? ""),
+    play: playLabel(item.data()),
   }));
+}
+
+export async function loadPlayHistory(count = 200) {
+  const { db } = requireDb();
+  const snap = await getDocs(query(collection(db, "sessions"), orderBy("endedAt", "desc"), limit(count)));
+  return snap.docs.map((item) => {
+    const data = item.data();
+    const status = String(data.status ?? "");
+    const paid = Number(data.paidMinutes ?? 0);
+    const booked = Number(data.bookedMinutes ?? 0);
+    return {
+      id: item.id,
+      at: status === "active" ? Number(data.startedAt ?? 0) : Number(data.endedAt ?? data.startedAt ?? 0),
+      by: String(data.by ?? ""),
+      name: String(data.name ?? "Player"),
+      stationName: String(data.stationName ?? data.stationId ?? ""),
+      play: status === "active" ? `${booked} min booked, still playing` : `${paid} min played`,
+      amount: Number(data.amountRupees ?? 0),
+      recorded: data.paymentRecorded === true,
+    };
+  });
 }
 
 export async function downloadBackup() {

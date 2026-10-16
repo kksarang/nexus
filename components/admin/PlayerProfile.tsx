@@ -66,7 +66,7 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
         ))}
       </div>
       <p className="text-sm text-mist">
-        Available points are the lifetime balance. This week&apos;s reward progress is separate and is not removed from that balance.
+        Available points are the lifetime balance. This week&apos;s reward uses 10 of those weekly points once, and the free 30 minutes do not earn more points or reduce this balance.
         {player.bankedMinutes ? ` ${player.bankedMinutes} paid minutes are waiting toward the next point.` : ""}
       </p>
       {desk.canEdit("customers") ? (

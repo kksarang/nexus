@@ -9,8 +9,12 @@ const fields: { key: keyof PriceBook; label: string; hint: string }[] = [
   { key: "station", label: "Stations 01–04, ₹ per hour", hint: "Walk-in price on the main floor." },
   { key: "simulator", label: "Car simulator, ₹ per hour", hint: "Station 05." },
   { key: "privateRoom", label: "Private room, ₹ per hour", hint: "Station 06." },
-  { key: "memberSessions", label: "Monthly plays", hint: "How many plays a new member receives." },
-  { key: "memberRupees", label: "Monthly plan, ₹", hint: "The price shown on the website." },
+  { key: "memberSessions", label: "Monthly plays", hint: "Plays a new monthly member receives. Valid for 1 month." },
+  { key: "memberRupees", label: "Monthly plan, ₹", hint: "Shown on the website." },
+  { key: "quarterSessions", label: "Quarterly plays", hint: "Valid for 3 months." },
+  { key: "quarterRupees", label: "Quarterly plan, ₹", hint: "Shown on the website." },
+  { key: "yearSessions", label: "Yearly plays", hint: "Valid for 12 months." },
+  { key: "yearRupees", label: "Yearly plan, ₹", hint: "Shown on the website." },
 ];
 
 export function PriceSettings() {
@@ -32,7 +36,7 @@ export function PriceSettings() {
           <IndianRupee size={18} aria-hidden="true" /> Prices
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-mist">
-          These amounts are what the website and the desk use. Saving updates the public pages straight away. Members who already joined keep the number of plays they were given.
+          These amounts are what the website and the desk use. Saving updates the public pages straight away. Members who already joined keep the plan, play count, and end date they were given.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

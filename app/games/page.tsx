@@ -6,7 +6,7 @@ import { PageHero } from "@/components/PageHero";
 export const metadata: Metadata = {
   title: "PS5 Game Library",
   description:
-    "Play EA Sports FC, WWE 2K, GTA V, Marvel’s Spider-Man, racing games, and more on PS5 at Nexus Playzone, Panoor.",
+    "Play the latest EA Sports FC, WWE 2K, GTA V, Marvel’s Spider-Man 2, Star Wars: Galactic Racer, and Ghost of Yōtei on PS5 at Nexus Playzone, Panoor.",
   alternates: { canonical: "/games" },
 };
 
@@ -23,8 +23,7 @@ export default function GamesPage() {
         image="/images/controller-glow.jpg"
         actions={<BookButton>Book a session</BookButton>}
       >
-        Football, wrestling, open-world, action, and racing, all on new PS5 consoles. Filter by genre
-        below, or ask us for a specific title.
+        The main PS5 games ready on the consoles. Filter by genre below, or ask for a title that is not listed.
       </PageHero>
       <Games heading={false} />
     </main>

@@ -120,8 +120,16 @@ export async function loadOperations(from: number, to: number): Promise<DeskData
     }
   }
 
+  const players = buildPlayers(base, list);
+  for (const player of players) {
+    const week = weeks.find((row) => row.customerId === player.id);
+    if (!week) continue;
+    player.weekPoints = week.points;
+    player.weekMinutes = week.minutes;
+  }
+
   return {
-    players: buildPlayers(base, list),
+    players,
     sessions: list,
     active: list.filter((session) => session.status === "active"),
     weeks,
@@ -174,6 +182,10 @@ export async function loadPlayerDetail(playerId: string): Promise<PlayerDetail> 
     ],
     sessions,
   )[0];
+  if (week) {
+    player.weekPoints = Number(week.data().points ?? 0);
+    player.weekMinutes = Number(week.data().minutes ?? 0);
+  }
   const ledger = ledgerSnap.docs
     .map((item) => {
       const row = item.data() as Record<string, unknown>;

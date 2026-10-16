@@ -82,8 +82,9 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="shell mt-12 border-t border-white/10 pt-6 text-xs text-mist">
+      <div className="shell mt-12 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-6 text-xs text-mist">
         <p>© 2026 Nexus Playzone. All rights reserved.</p>
+        <p>Developed by Enitexa</p>
       </div>
     </footer>
   );

@@ -148,7 +148,7 @@ service cloud.firestore {
         && request.resource.data.sessionsUsed == 0
         && request.resource.data.sessionsTotal is int
         && request.resource.data.sessionsTotal > 0
-        && request.resource.data.sessionsTotal <= 100
+        && request.resource.data.sessionsTotal <= 400
         && request.resource.data.amountPaid is int
         && request.resource.data.amountPaid >= 0
         && request.resource.data.startAt is number
@@ -212,7 +212,7 @@ service cloud.firestore {
     }
 
     function validPrices() {
-      return request.resource.data.keys().hasOnly(["station", "simulator", "privateRoom", "memberSessions", "memberRupees", "updatedBy", "updatedAt"])
+      return request.resource.data.keys().hasOnly(["station", "simulator", "privateRoom", "memberSessions", "memberRupees", "quarterSessions", "quarterRupees", "yearSessions", "yearRupees", "updatedBy", "updatedAt"])
         && request.resource.data.station is int
         && request.resource.data.station >= 1
         && request.resource.data.station <= 10000
@@ -224,10 +224,22 @@ service cloud.firestore {
         && request.resource.data.privateRoom <= 10000
         && request.resource.data.memberSessions is int
         && request.resource.data.memberSessions >= 1
-        && request.resource.data.memberSessions <= 60
+        && request.resource.data.memberSessions <= 400
         && request.resource.data.memberRupees is int
         && request.resource.data.memberRupees >= 0
-        && request.resource.data.memberRupees <= 100000
+        && request.resource.data.memberRupees <= 500000
+        && request.resource.data.quarterSessions is int
+        && request.resource.data.quarterSessions >= 1
+        && request.resource.data.quarterSessions <= 400
+        && request.resource.data.quarterRupees is int
+        && request.resource.data.quarterRupees >= 0
+        && request.resource.data.quarterRupees <= 500000
+        && request.resource.data.yearSessions is int
+        && request.resource.data.yearSessions >= 1
+        && request.resource.data.yearSessions <= 400
+        && request.resource.data.yearRupees is int
+        && request.resource.data.yearRupees >= 0
+        && request.resource.data.yearRupees <= 500000
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time;
     }

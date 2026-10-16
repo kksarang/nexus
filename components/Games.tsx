@@ -29,8 +29,8 @@ export function Games({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            Football, wrestling, open-world, action, and racing, all on new PS5 consoles. New titles
-            are added often, so ask if you are looking for a specific game.
+            The main PS5 games on the floor: the latest EA Sports FC and WWE 2K, GTA V, Spider-Man 2,
+            Star Wars: Galactic Racer, and Ghost of Yōtei. Ask if you want a title that is not on this list.
           </SectionIntro>
         ) : null}
 

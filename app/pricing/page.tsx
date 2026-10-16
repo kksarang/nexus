@@ -6,7 +6,7 @@ import { Pricing } from "@/components/Pricing";
 export const metadata: Metadata = {
   title: "Pricing and Membership",
   description:
-    "Hourly PS5 rates, private-room bookings, group packages, offers, and monthly membership at Nexus Playzone, Panoor.",
+    "Hourly PS5 rates and monthly, quarterly, and yearly membership at Nexus Playzone, Panoor.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -22,8 +22,7 @@ export default function PricingPage() {
         }
         image="/images/crew-session.jpg"
       >
-        Hourly rates for a station or the private room, packages for groups, and monthly plans for
-        regulars.
+        Hourly rates for a station or the private room, and monthly, quarterly, or yearly plans for regulars.
       </PageHero>
       <Pricing heading={false} />
       <Membership />

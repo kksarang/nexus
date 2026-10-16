@@ -7,6 +7,7 @@ import { Hero } from "@/components/Hero";
 import { LiveBoard } from "@/components/LiveStatus";
 import { Location } from "@/components/Location";
 import { LoyaltyHome } from "@/components/LoyaltyHome";
+import { Membership } from "@/components/Membership";
 import { Pricing } from "@/components/Pricing";
 import { PrivateRoom } from "@/components/PrivateRoom";
 import { Reviews } from "@/components/Reviews";
@@ -29,6 +30,7 @@ export default function HomePage() {
       <PrivateRoom />
       <Games />
       <Pricing />
+      <Membership />
       <BookingSection />
       <LoyaltyHome />
       <Gallery />

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
-import { chargeForSession, type FinishedPlay } from "@/lib/loyalty";
+import { REWARD_MINUTES, chargeForSession, type FinishedPlay } from "@/lib/loyalty";
 import type { LiveTimer } from "@/lib/loyaltyApi";
 import { hourlyFor, getPrices } from "@/lib/prices";
 import { useLivePrices } from "@/components/useLivePrices";
@@ -19,6 +19,7 @@ type Session = {
   alarmed: boolean;
   extraMinutes: number;
   member: boolean;
+  reward: boolean;
 };
 
 type Draft = {
@@ -30,6 +31,7 @@ type Draft = {
   customerId?: string;
   membershipId?: string;
   membershipLeft?: number;
+  useReward?: boolean;
 };
 
 export type DeskCustomer = { id: string; name: string; phone: string };
@@ -117,6 +119,7 @@ function sessionFromTimer(remote: LiveTimer, stationEnd: number): Session {
     alarmed: endsAt <= Date.now(),
     extraMinutes,
     member: remote.member,
+    reward: remote.reward,
   };
 }
 
@@ -128,6 +131,7 @@ function amountFor(session: Session, stationId: string, endedAt: number) {
     endedAt,
     planMinutes: Math.round(session.hours * 60),
     member: session.member,
+    reward: session.reward,
   });
 }
 
@@ -148,7 +152,7 @@ export function FloorBoard({
 }: {
   only?: string;
   wall?: boolean;
-  activeCustomer?: { id: string; name: string; phone: string; membership?: DeskMembership } | null;
+  activeCustomer?: { id: string; name: string; phone: string; membership?: DeskMembership; rewardReady?: boolean } | null;
   customers?: DeskCustomer[];
   customersLoading?: boolean;
   onLookupMembership?: (customerId: string) => Promise<DeskMembership>;
@@ -169,9 +173,10 @@ export function FloorBoard({
     players: number;
     note: string;
     member: boolean;
+    reward?: boolean;
     membershipId?: string;
     memberSessions?: number;
-  }) => void;
+  }) => void | Promise<void>;
 }) {
   useLivePrices();
   const board = only ? stations.filter((item) => item.id === only) : stations;
@@ -285,6 +290,7 @@ export function FloorBoard({
         next.customerId = undefined;
         next.membershipId = undefined;
         next.membershipLeft = undefined;
+        next.useReward = false;
       }
       return { ...current, [id]: next };
     });
@@ -322,7 +328,7 @@ export function FloorBoard({
     });
   }
 
-  function start(id: string) {
+  async function start(id: string) {
     if (readOnly) {
       setErrorBay(id);
       setError("This login can view gaming, not start a session.");
@@ -340,16 +346,44 @@ export function FloorBoard({
       setError("Add the customer name before starting.");
       return;
     }
-    const member = Boolean(draft.membershipId && MEMBER_STATIONS.includes(id));
-    const memberSessions = memberSessionsFor(draft.hours);
+    const useReward = Boolean(draft.useReward && activeCustomer?.rewardReady);
+    const member = Boolean(draft.membershipId && MEMBER_STATIONS.includes(id) && !useReward);
+    if (draft.useReward && draft.membershipId && MEMBER_STATIONS.includes(id)) {
+      setErrorBay(id);
+      setError("Use either the membership or the free 30 minutes for this session.");
+      return;
+    }
+    const hours = useReward ? REWARD_MINUTES / 60 : draft.hours;
+    const memberSessions = memberSessionsFor(hours);
     if (member && memberSessions > (draft.membershipLeft ?? 0)) {
       setErrorBay(id);
       setError(`Only ${draft.membershipLeft ?? 0} membership sessions are left. Choose a shorter time or collect payment.`);
       return;
     }
-    armAlarm();
     const startedAt = Date.now();
-    const bookedMinutes = Math.round(draft.hours * 60);
+    const bookedMinutes = Math.round(hours * 60);
+    const bay = stations.find((item) => item.id === id);
+    try {
+      await onStart?.({
+        stationId: id,
+        stationName: bay?.name ?? id,
+        name,
+        phone: draft.phone.trim(),
+        startedAt,
+        bookedMinutes,
+        planMinutes: bookedMinutes,
+        players: draft.players,
+        note: draft.note.trim(),
+        member,
+        reward: useReward,
+        ...(member ? { membershipId: draft.membershipId, memberSessions } : {}),
+      });
+    } catch (reason) {
+      setErrorBay(id);
+      setError(reason instanceof Error ? reason.message : "The session was not started.");
+      return;
+    }
+    armAlarm();
     setSessions((current) => ({
       ...current,
       [id]: {
@@ -357,12 +391,13 @@ export function FloorBoard({
         phone: draft.phone.trim(),
         note: draft.note.trim(),
         players: draft.players,
-        hours: draft.hours,
+        hours,
         startedAt,
         endsAt: startedAt + bookedMinutes * 60 * 1000,
         alarmed: false,
         extraMinutes: 0,
         member,
+        reward: useReward,
       },
     }));
     setDrafts((current) => {
@@ -372,20 +407,6 @@ export function FloorBoard({
     });
     setNotice("");
     setError("");
-    const bay = stations.find((item) => item.id === id);
-    onStart?.({
-      stationId: id,
-      stationName: bay?.name ?? id,
-      name,
-      phone: draft.phone.trim(),
-      startedAt,
-      bookedMinutes,
-      planMinutes: bookedMinutes,
-      players: draft.players,
-      note: draft.note.trim(),
-      member,
-      ...(member ? { membershipId: draft.membershipId, memberSessions } : {}),
-    });
   }
 
   function clear(id: string, amount: number) {
@@ -409,6 +430,7 @@ export function FloorBoard({
       startedAt: session.startedAt,
       endedAt,
       bookedMinutes: Math.round(session.hours * 60) + session.extraMinutes,
+      reward: session.reward,
       ...(amount > 0 ? { collectedRupees: amount } : {}),
     });
   }
@@ -469,6 +491,7 @@ export function FloorBoard({
         customersLoading={customersLoading}
         readOnly={readOnly}
         timersReady={timersReady}
+        rewardReady={Boolean(activeCustomer?.rewardReady)}
         onDraft={updateDraft}
         onChoose={chooseCustomer}
         onClearCustomer={clearCustomer}
@@ -1067,6 +1090,7 @@ function ConsoleWall({
   customersLoading,
   readOnly,
   timersReady,
+  rewardReady,
   onDraft,
   onChoose,
   onClearCustomer,
@@ -1084,13 +1108,14 @@ function ConsoleWall({
   customers: DeskCustomer[];
   customersLoading: boolean;
   readOnly: boolean;
+  timersReady: boolean;
+  rewardReady: boolean;
   onDraft: (id: string, patch: Partial<Draft>) => void;
   onChoose: (id: string, customer: DeskCustomer) => void;
   onClearCustomer: (id: string) => void;
   onStart: (id: string) => void;
   onExtend: (id: string) => void;
   onClear: (id: string, amount: number) => void;
-  timersReady: boolean;
 }) {
   return (
     <div>
@@ -1158,13 +1183,19 @@ function ConsoleWall({
                         <dd>{durationLabel(hours)}</dd>
                       </div>
                       <div className="console-stat">
-                        <dt>{session.member ? "Membership" : "Amount"}</dt>
-                        <dd>{session.member && amount === 0 ? "Prepaid" : formatRupees(amount)}</dd>
+                        <dt>{session.reward ? "Reward" : session.member ? "Membership" : "Amount"}</dt>
+                        <dd>{session.reward && amount === 0 ? "Free" : session.member && amount === 0 ? "Prepaid" : formatRupees(amount)}</dd>
                       </div>
                     </dl>
-                    {extraMinutes > 0 ? (
+                    {extraMinutes > 0 && !session.reward ? (
                       <p className="mt-2 text-xs tracking-[0.12em] text-mist uppercase">
                         Extra time +{extraMinutes} min · {formatRupees(extraCost)}
+                      </p>
+                    ) : null}
+                    {session.reward ? (
+                      <p className="mt-2 text-xs text-cyan">
+                        The first {REWARD_MINUTES} minutes are free and earn no points.
+                        {amount > 0 ? " Time after that is charged and earns points." : ""}
                       </p>
                     ) : null}
                     {readOnly ? (
@@ -1208,10 +1239,28 @@ function ConsoleWall({
                       max={MAX_PLAYERS}
                       onChange={(players) => onDraft(item.id, { players })}
                     />
-                    <DurationPicker hours={draft.hours} onChange={(hoursValue) => onDraft(item.id, { hours: hoursValue })} />
-                    {memberCovered ? (
+                    {draft.useReward ? (
+                      <p className="text-sm text-cyan">Free reward · {REWARD_MINUTES} minutes. Time after 30 minutes is charged and earns points.</p>
+                    ) : (
+                      <DurationPicker hours={draft.hours} onChange={(hoursValue) => onDraft(item.id, { hours: hoursValue })} />
+                    )}
+                    {rewardReady ? (
+                      <label className="flex items-start gap-2 text-sm text-paper">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={Boolean(draft.useReward)}
+                          onChange={(event) => onDraft(item.id, { useReward: event.target.checked, hours: event.target.checked ? REWARD_MINUTES / 60 : draft.hours })}
+                        />
+                        Use this week&apos;s free {REWARD_MINUTES} minutes on this console. It can be used once, and only when this session is completed.
+                      </label>
+                    ) : null}
+                    {draft.useReward && memberCovered ? (
+                      <p className="text-sm text-magenta">Use either the monthly membership or the free 30 minutes.</p>
+                    ) : null}
+                    {memberCovered && !draft.useReward ? (
                       <p className="rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan">
-                        Monthly member · uses {memberSessionsFor(draft.hours)} of {draft.membershipLeft ?? 0} sessions left. Nothing to collect.
+                        Member · uses {memberSessionsFor(draft.hours)} of {draft.membershipLeft ?? 0} sessions left. Nothing to collect.
                       </p>
                     ) : (
                       <>
@@ -1219,9 +1268,9 @@ function ConsoleWall({
                           <p className="text-xs text-mist">The membership covers Stations 01 to 04 only. This console is charged normally.</p>
                         ) : null}
                         <p className="font-tech text-2xl text-paper">
-                          {formatRupees(Math.round(rate * draft.hours))}
+                          {draft.useReward ? formatRupees(0) : formatRupees(Math.round(rate * draft.hours))}
                           <span className="ml-2 font-sans text-xs tracking-normal text-mist">
-                            {formatRupees(rate)} × {durationLabel(draft.hours)}
+                            {draft.useReward ? `Free ${REWARD_MINUTES} min` : `${formatRupees(rate)} × ${durationLabel(draft.hours)}`}
                           </span>
                         </p>
                       </>

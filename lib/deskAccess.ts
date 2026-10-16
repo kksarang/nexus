@@ -7,8 +7,8 @@ export type AccessMap = Record<ModuleId, Level>;
 export const moduleInfo: { id: ModuleId; label: string; detail: string }[] = [
   { id: "customers", label: "Customers", detail: "Players list. View only, or also add and edit." },
   { id: "gaming", label: "Gaming", detail: "Start a session, live sessions, and consoles. View only, or also run the timers." },
-  { id: "members", label: "Monthly members", detail: "Membership list. View only, or also add and change memberships." },
-  { id: "history", label: "Session history", detail: "Past sessions." },
+  { id: "members", label: "Memberships", detail: "Monthly, quarterly, and yearly plans. View only, or also add and change memberships." },
+  { id: "history", label: "Session history", detail: "Past play sessions. The Activity page stays visible to every login and cannot be edited." },
   { id: "revenue", label: "Revenue", detail: "Daily and monthly revenue. Leave this off for counter staff." },
   { id: "loyalty", label: "Loyalty and rewards", detail: "Points and free-session rewards." },
   { id: "reports", label: "Reports and analytics", detail: "Charts and downloads." },
@@ -78,6 +78,7 @@ export function homeFor(admin: boolean, access: AccessMap) {
 
 export function pathAllowed(pathname: string, admin: boolean, access: AccessMap) {
   if (pathname === "/admin/login") return true;
+  if (pathname === "/admin/activity") return true;
   if (pathname === "/admin") return admin;
   if (admin) return true;
   const hit = pages.find((item) => pathname === item.prefix || pathname.startsWith(`${item.prefix}/`));

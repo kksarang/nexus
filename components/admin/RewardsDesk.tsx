@@ -11,7 +11,8 @@ export function RewardsDesk() {
   const players = desk.data?.players ?? [];
   const weeks = desk.data?.weeks ?? [];
   const earned = players.reduce((total, player) => total + player.lifetimePoints, 0);
-  const ready = weeks.filter((week) => week.points >= WEEKLY_TARGET && !week.redeemedAt);
+  const unlocked = weeks.filter((week) => week.points >= WEEKLY_TARGET);
+  const ready = unlocked.filter((week) => !week.redeemedAt);
   const close = weeks.filter((week) => week.points >= WEEKLY_TARGET - 3 && week.points < WEEKLY_TARGET && !week.redeemedAt);
   const redeemed = weeks.filter((week) => week.redeemedAt);
 
@@ -21,7 +22,7 @@ export function RewardsDesk() {
         <h1 className="text-4xl tracking-wide text-paper uppercase">Loyalty and rewards</h1>
         <p className="mt-2 max-w-2xl text-sm text-mist">
           One point for every 60 paid minutes. {WEEKLY_TARGET} points from Monday to Sunday IST unlocks {REWARD_MINUTES} free minutes.
-          Using the reward does not reduce the lifetime points balance.
+          The free minutes earn no points and are used once, when that session is completed. Lifetime points stay on the card.
         </p>
       </div>
       <DeskNote />
@@ -31,7 +32,7 @@ export function RewardsDesk() {
           ["Available balance", String(earned)],
           ["Outstanding weekly rewards", String(ready.length)],
           ["Close to this week's reward", String(close.length)],
-          ["Unlocked this week", String(ready.length)],
+          ["Unlocked this week", String(unlocked.length)],
           ["Redeemed this week", String(redeemed.length)],
         ].map(([label, value]) => (
           <article key={label} className="rounded-2xl border border-white/10 bg-[#101624] p-4">
@@ -54,7 +55,7 @@ export function RewardsDesk() {
               return (
                 <tr key={player.id} className="border-t border-white/10">
                   <td className="px-3 py-3"><Link href={`/admin/players/${player.id}`} className="text-cyan">{player.name}</Link></td>
-                  <td className="px-3 py-3">{points} / {WEEKLY_TARGET}</td>
+                  <td className="px-3 py-3">{points}{points > WEEKLY_TARGET ? ` · reward uses ${WEEKLY_TARGET}` : ` / ${WEEKLY_TARGET}`}</td>
                   <td className="px-3 py-3">{hoursLabel(week?.minutes ?? player.weekMinutes)}</td>
                   <td className="px-3 py-3">{player.lifetimePoints}</td>
                   <td className="px-3 py-3">{label}</td>

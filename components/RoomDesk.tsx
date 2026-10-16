@@ -10,14 +10,13 @@ import {
   findCustomer,
   openLiveSession,
   recordPaidSession,
-  redeemReward,
   registerCustomer,
   subscribeActiveSessions,
   type CustomerProfile,
   type LiveTimer,
 } from "@/lib/loyaltyApi";
 import { normalizePhone, WEEKLY_TARGET } from "@/lib/loyalty";
-import { currentMembership, formatDay, sessionsLeft, spendSessions, type Membership } from "@/lib/membershipApi";
+import { currentMembership, formatDay, planLabel, sessionsLeft, spendSessions, type Membership } from "@/lib/membershipApi";
 import { markStationBusy, releaseStationAfterSession, subscribeStationStatus } from "@/lib/stationStatus";
 
 function CustomerLookup({
@@ -165,34 +164,14 @@ function CustomerLookup({
           <p className="text-paper">
             <strong>{customer.name}</strong> · {customer.phone}. Name and mobile are filled on each open console.
           </p>
-          {rewardReady ? <span className="rounded-full border border-cyan/40 bg-cyan/10 px-2.5 py-1 text-xs text-cyan">Free 30 minutes ready</span> : null}
+          {rewardReady ? <span className="rounded-full border border-cyan/40 bg-cyan/10 px-2.5 py-1 text-xs text-cyan">Free 30 minutes ready — start it on one console</span> : null}
           {membership ? (
             <label className="flex items-center gap-2 rounded-full border border-cyan/40 bg-cyan/10 px-3 py-1 text-xs text-cyan">
               <input type="checkbox" checked={useMember} onChange={(event) => onUseMember(event.target.checked)} />
-              Monthly member · {sessionsLeft(membership)} of {membership.sessionsTotal} left · until {formatDay(membership.endAt)} · use for this booking
+              {planLabel(membership.plan)} member · {sessionsLeft(membership)} of {membership.sessionsTotal} left · until {formatDay(membership.endAt)} · use for this booking
             </label>
           ) : null}
           <div className="ml-auto flex flex-wrap gap-2">
-            {rewardReady ? (
-              <button
-                type="button"
-                className="btn btn-secondary min-h-9 px-3"
-                disabled={pending}
-                onClick={() => {
-                  setPending(true);
-                  void redeemReward(customer.id)
-                    .then(async () => {
-                      const next = await findCustomer(customer.phone);
-                      if (next) onCustomer(next);
-                      setMessage("Free 30 minutes marked as used.");
-                    })
-                    .catch((reason: unknown) => setMessage(reason instanceof Error ? reason.message : "Could not redeem."))
-                    .finally(() => setPending(false));
-                }}
-              >
-                Redeem free 30 min
-              </button>
-            ) : null}
             <Link href={`/admin/players/${customer.id}`} className="btn btn-secondary min-h-9 px-3">
               View details
             </Link>
@@ -301,6 +280,7 @@ export function RoomDesk() {
   }
 
   const deskMembership = membership && useMember ? { id: membership.id, left: sessionsLeft(membership), endsLabel: formatDay(membership.endAt) } : null;
+  const rewardReady = Boolean(customer && customer.weeklyPoints >= WEEKLY_TARGET && !customer.rewardRedeemed);
 
   return (
     <>
@@ -318,7 +298,7 @@ export function RoomDesk() {
       ) : null}
       <FloorBoard
         wall
-        activeCustomer={customer ? { id: customer.id, name: customer.name, phone: customer.phone, membership: deskMembership } : null}
+        activeCustomer={customer ? { id: customer.id, name: customer.name, phone: customer.phone, membership: deskMembership, rewardReady } : null}
         customers={customers}
         customersLoading={desk.loading && customers.length === 0}
         readOnly={!desk.canEdit("gaming")}
@@ -330,12 +310,9 @@ export function RoomDesk() {
           if (!found) return null;
           return { id: found.id, left: sessionsLeft(found), endsLabel: formatDay(found.endAt) };
         }}
-        onStart={(play) => {
-          void openLiveSession(play)
-            .then(() => desk.reload())
-            .catch((reason: unknown) => {
-              setResult(reason instanceof Error ? reason.message : "The timer started, but the session was not saved. The stations page may not show this player.");
-            });
+        onStart={async (play) => {
+          await openLiveSession(play);
+          desk.reload();
           void markStationBusy(play.stationId, play.startedAt + play.bookedMinutes * 60 * 1000).catch((reason: unknown) => {
             setResult(reason instanceof Error ? reason.message : "The timer started, but the website was not updated.");
           });
@@ -365,7 +342,9 @@ export function RoomDesk() {
             .then(async (text) => {
               const money = play.collectedRupees
                 ? ` ₹${play.collectedRupees.toLocaleString("en-IN")} added to ${play.name} and to today's revenue.`
-                : ` No rupees were added. Points still follow the time played when ${play.name} has a mobile number.`;
+                : play.reward
+                  ? " The free reward was not added to revenue."
+                  : ` No rupees were added. Points still follow the paid time when ${play.name} has a mobile number.`;
               setResult(`${text}${money}`);
               desk.reload();
               if (!normalizePhone(play.phone)) return;
