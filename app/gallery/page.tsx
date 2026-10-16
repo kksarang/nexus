@@ -21,7 +21,7 @@ export default function GalleryPage() {
         }
         actions={<BookButton>Book a session</BookButton>}
       >
-        The consoles, the screens, the seats, the private room, and the moments in between.
+        The consoles, the screens, the seats, the private room, and the founders.
       </PageHero>
       <Gallery heading={false} />
     </main>

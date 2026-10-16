@@ -1,6 +1,5 @@
+import Image from "next/image";
 import { founders } from "@/lib/site";
-
-const edges = ["from-cyan", "from-blue", "from-magenta"];
 
 export function Founders() {
   return (
@@ -12,20 +11,27 @@ export function Founders() {
             Three friends. <span className="text-gradient">One big idea.</span>
           </h2>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-mist sm:text-lg">
-            Nexus Playzone began with three friends — Adarsh, Sarang, and Vishnu — sharing one
+            Nexus Playzone began with three friends — Vishnu, Sarang, and Adarsh — sharing one
             ambition: to create a next-generation gaming destination in Panoor where people can
             connect, compete, and enjoy an exceptional gaming experience.
           </p>
         </div>
         <ul className="reveal grid gap-4 sm:grid-cols-3">
-          {founders.map((founder, index) => (
-            <li key={founder.name} className="panel relative overflow-hidden p-6">
-              <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${edges[index]} to-transparent`} />
-              <span className="font-tech text-5xl text-gradient" aria-hidden="true">
-                {founder.initial}
-              </span>
-              <h3 className="mt-6 text-3xl tracking-wide text-paper uppercase">{founder.name}</h3>
-              <p className="mt-1 text-xs tracking-[0.18em] text-mist uppercase">{founder.role}</p>
+          {founders.map((founder) => (
+            <li key={founder.name} className="panel overflow-hidden p-0">
+              <div className="relative aspect-[3/4]">
+                <Image
+                  src={founder.image}
+                  alt={`${founder.name}, ${founder.role} of Nexus Playzone`}
+                  fill
+                  sizes="(min-width: 1024px) 18vw, 80vw"
+                  className="object-cover object-top"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="text-2xl tracking-wide text-paper uppercase">{founder.name}</h3>
+                <p className="mt-1 text-xs tracking-[0.18em] text-mist uppercase">{founder.role}</p>
+              </div>
             </li>
           ))}
         </ul>

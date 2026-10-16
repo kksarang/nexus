@@ -21,7 +21,7 @@ export function Gallery({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            The consoles, the screens, the seats, and the moments in between.
+            The consoles, the screens, the seats, and the three founders.
           </SectionIntro>
         ) : null}
 
