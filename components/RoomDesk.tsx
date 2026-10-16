@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { FloorBoard } from "@/components/FloorBoard";
 import { LoyaltyDesk } from "@/components/LoyaltyDesk";
-import { openLiveSession } from "@/lib/adminApi";
-import { findCustomer, recordPaidSession, type CustomerProfile } from "@/lib/loyaltyApi";
+import { findCustomer, openLiveSession, recordPaidSession, type CustomerProfile } from "@/lib/loyaltyApi";
 import { normalizePhone } from "@/lib/loyalty";
 
 export function RoomDesk() {

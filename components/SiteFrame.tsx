@@ -8,6 +8,14 @@ import { Header } from "@/components/Header";
 import { MobileBar } from "@/components/MobileBar";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<>{children}</>}>
+      <Chrome>{children}</Chrome>
+    </Suspense>
+  );
+}
+
+function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin")) return <>{children}</>;
 

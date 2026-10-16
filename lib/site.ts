@@ -90,14 +90,18 @@ export const memberships = [
 ] as const;
 
 export const nav = [
-  { href: "/stations", label: "Stations" },
-  { href: "/private-room", label: "Private Room" },
-  { href: "/room", label: "Room" },
+  { href: "/", label: "Home" },
+  { href: "/stations", label: "Gaming Zones" },
   { href: "/games", label: "Games" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/player", label: "Points" },
+  { href: "/player", label: "Rewards" },
   { href: "/gallery", label: "Gallery" },
-  { href: "/visit", label: "Visit" },
+  { href: "/contact", label: "Contact" },
+] as const;
+
+export const footerLinks = [
+  { href: "/private-room", label: "Private Room" },
+  { href: "/about", label: "About Us" },
 ] as const;
 
 export const highlights = [

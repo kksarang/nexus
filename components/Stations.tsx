@@ -27,12 +27,12 @@ export function Stations({ heading = true }: { heading?: boolean }) {
   const room = stations.find((station) => station.privateRoom);
 
   return (
-    <section id="stations" className="py-20 sm:py-28">
+    <section id="zones" className="py-20 sm:py-28">
       <div className="shell">
         {heading ? (
           <div className="reveal">
             <SectionIntro
-              eyebrow="Our stations"
+              eyebrow="Gaming zones"
               title={
                 <>
                   Six PS5 stations. <span className="text-gradient">Pick yours.</span>

@@ -1,5 +1,5 @@
 import { istDayStart, istHour, istMonthStart, istYearStart, weekStartMonday } from "@/lib/loyalty";
-import { rateForStation, stations } from "@/lib/site";
+import { stations } from "@/lib/site";
 
 export type OpsSession = {
   id: string;
@@ -45,14 +45,18 @@ export type WeekRow = {
   redeemedAt: number;
 };
 
-export function estimateAmount(stationId: string, paidMinutes: number, recorded: number) {
-  if (recorded > 0) return { amountRupees: recorded, amountRecorded: true };
-  const rate = rateForStation(stationId)?.rupees ?? 0;
-  return { amountRupees: Math.round((paidMinutes / 60) * rate), amountRecorded: false };
+export function recordedPayment(flag: unknown, amount: number) {
+  const rupees = Number.isFinite(amount) ? Math.round(amount) : 0;
+  if (flag === true && rupees > 0) return { amountRupees: rupees, amountRecorded: true };
+  return { amountRupees: 0, amountRecorded: false };
 }
 
-export function rangeFor(key: "today" | "week" | "month" | "year" | "all", now = Date.now()) {
+export function rangeFor(key: "today" | "yesterday" | "week" | "month" | "year" | "all", now = Date.now()) {
   if (key === "today") return { from: istDayStart(now), to: now };
+  if (key === "yesterday") {
+    const start = istDayStart(now) - 24 * 60 * 60 * 1000;
+    return { from: start, to: istDayStart(now) - 1 };
+  }
   if (key === "week") return { from: weekStartMonday(now), to: now };
   if (key === "month") return { from: istMonthStart(now), to: now };
   if (key === "year") return { from: istYearStart(now), to: now };

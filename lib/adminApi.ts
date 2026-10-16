@@ -1,13 +1,13 @@
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, where } from "firebase/firestore";
 import {
   buildPlayers,
-  estimateAmount,
+  recordedPayment,
   type OpsPlayer,
   type OpsSession,
   type WeekRow,
 } from "@/lib/adminStats";
 import { firebaseServices } from "@/lib/firebaseClient";
-import { millisOf, weekKey } from "@/lib/loyalty";
+import { istYearStart, millisOf, weekKey } from "@/lib/loyalty";
 import { stations } from "@/lib/site";
 
 function requireDb() {
@@ -22,7 +22,6 @@ function asSession(id: string, data: Record<string, unknown>): OpsSession {
   const startedAt = Number(data.startedAt ?? 0);
   const endedAt = Number(data.endedAt ?? startedAt);
   const paidMinutes = Number(data.paidMinutes ?? 0);
-  const recorded = Number(data.amountRupees ?? 0);
   const rawStatus = String(data.status ?? "");
   const status =
     rawStatus === "active" || rawStatus === "completed" || rawStatus === "cancelled"
@@ -30,7 +29,7 @@ function asSession(id: string, data: Record<string, unknown>): OpsSession {
       : paidMinutes > 0 || endedAt > startedAt
         ? "completed"
         : "active";
-  const money = estimateAmount(String(data.stationId ?? ""), status === "completed" ? paidMinutes : 0, recorded);
+  const money = recordedPayment(data.paymentRecorded, Number(data.amountRupees ?? 0));
   return {
     id,
     customerId: String(data.customerId ?? ""),
@@ -61,9 +60,12 @@ export type DeskData = {
 
 export async function loadOperations(from: number, to: number): Promise<DeskData> {
   const { db } = requireDb();
+  const now = Date.now();
+  const fetchFrom = Math.min(from, istYearStart(now));
+  const fetchTo = Math.max(to, now);
   const [customersSnap, sessionsSnap, activeSnap, weeksSnap, stationSnap] = await Promise.all([
     getDocs(query(collection(db, "customers"), orderBy("lifetimePoints", "desc"), limit(500))),
-    getDocs(query(collection(db, "sessions"), where("endedAt", ">=", from), where("endedAt", "<=", to), orderBy("endedAt", "desc"), limit(2000))),
+    getDocs(query(collection(db, "sessions"), where("endedAt", ">=", fetchFrom), where("endedAt", "<=", fetchTo), orderBy("endedAt", "desc"), limit(2000))),
     getDocs(query(collection(db, "sessions"), where("status", "==", "active"), limit(30))),
     getDocs(query(collection(db, "weeklyProgress"), limit(500))),
     getDocs(collection(db, "stations")),

@@ -67,3 +67,40 @@ export function RewardsDesk() {
     </div>
   );
 }
+
+export function RedemptionsDesk() {
+  const desk = useDesk();
+  const players = desk.data?.players ?? [];
+  const redeemed = (desk.data?.weeks ?? []).filter((week) => week.redeemedAt);
+
+  return (
+    <div className="grid gap-5">
+      <div>
+        <h1 className="text-4xl tracking-wide text-paper uppercase">Rewards and redemptions</h1>
+        <p className="mt-2 max-w-2xl text-sm text-mist">
+          A redemption is the free 30-minute session unlocked by 10 points in the India week. It does not subtract lifetime points and it is not recorded revenue.
+        </p>
+      </div>
+      <DeskNote />
+      <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[36rem] text-left text-sm">
+          <thead className="text-[0.62rem] tracking-[0.12em] text-mist uppercase">
+            <tr>{["Player", "Week points", "Redeemed"].map((heading) => <th key={heading} className="px-3 py-3 font-medium">{heading}</th>)}</tr>
+          </thead>
+          <tbody>
+            {redeemed.length ? redeemed.map((week) => {
+              const player = players.find((item) => item.id === week.customerId);
+              return (
+                <tr key={`${week.customerId}-${week.redeemedAt}`} className="border-t border-white/10">
+                  <td className="px-3 py-3">{player ? <Link href={`/admin/players/${player.id}`} className="text-cyan">{player.name}</Link> : week.customerId}</td>
+                  <td className="px-3 py-3">{week.points}</td>
+                  <td className="px-3 py-3 text-mist">{week.redeemedAt ? new Date(week.redeemedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "—"}</td>
+                </tr>
+              );
+            }) : <tr><td colSpan={3} className="px-3 py-6 text-mist">No rewards redeemed in the loaded weeks.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

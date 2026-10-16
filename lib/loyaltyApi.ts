@@ -20,16 +20,20 @@ import {
   istDayStart,
   istMonthStart,
   istYearStart,
-  millisOf,
   weekStartMonday,
   normalizePhone,
   phoneE164,
   weekKey,
   type FinishedPlay,
 } from "@/lib/loyalty";
-import { rateForStation } from "@/lib/site";
 
 export type { FinishedPlay };
+
+function paymentOf(play: FinishedPlay) {
+  const amount = play.collectedRupees ?? 0;
+  if (Number.isInteger(amount) && amount > 0) return { amountRupees: amount, paymentRecorded: true };
+  return { amountRupees: 0, paymentRecorded: false };
+}
 
 export type CustomerProfile = {
   id: string;
@@ -137,7 +141,8 @@ async function closeWithoutPoints(play: FinishedPlay, paidMinutes: number) {
     bookedMinutes: play.bookedMinutes,
     paidMinutes,
     points: 0,
-    amountRupees: 0,
+    amountRupees: paymentOf(play).amountRupees,
+    paymentRecorded: paymentOf(play).paymentRecorded,
     status: "completed",
     complimentary: !normalizePhone(play.phone),
     by: user.uid,
@@ -171,6 +176,7 @@ export async function openLiveSession(play: {
     paidMinutes: 0,
     points: 0,
     amountRupees: 0,
+    paymentRecorded: false,
     complimentary: false,
     by: user.uid,
   });
@@ -205,7 +211,7 @@ export async function recordPaidSession(play: FinishedPlay) {
     const previous = customerSnap?.exists() ? customerSnap.data() : null;
     const award = awardMinutes(Number(previous?.bankedMinutes ?? 0), slices);
     const name = String((previous?.name ?? play.name.trim()) || "Player");
-    const amountRupees = Math.round((paidMinutes / 60) * (rateForStation(play.stationId)?.rupees ?? 0));
+    const payment = paymentOf(play);
     const sessionRecord = {
       customerId: customerRef.id,
       name,
@@ -218,7 +224,8 @@ export async function recordPaidSession(play: FinishedPlay) {
       bookedMinutes: play.bookedMinutes,
       paidMinutes,
       points: award.points,
-      amountRupees,
+      amountRupees: payment.amountRupees,
+      paymentRecorded: payment.paymentRecorded,
       status: "completed",
       complimentary: false,
       by: user.uid,

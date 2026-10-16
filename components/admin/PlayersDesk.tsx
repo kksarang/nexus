@@ -22,11 +22,11 @@ export function PlayersDesk() {
   const [registeredFrom, setRegisteredFrom] = useState("");
   const [registeredTo, setRegisteredTo] = useState("");
   const [page, setPage] = useState(0);
-  const players = desk.data?.players ?? [];
   const needle = query.trim().toLowerCase();
   const phoneNeedle = query.replace(/\D/g, "");
 
   const visible = useMemo(() => {
+    const players = desk.data?.players ?? [];
     const from = registeredFrom ? Date.parse(`${registeredFrom}T00:00:00+05:30`) : 0;
     const to = registeredTo ? Date.parse(`${registeredTo}T23:59:59+05:30`) : Number.POSITIVE_INFINITY;
     const rows = players.filter((player) => {
@@ -43,7 +43,7 @@ export function PlayersDesk() {
       return b.lifetimePoints - a.lifetimePoints;
     });
     return rows;
-  }, [players, needle, phoneNeedle, filter, sort, registeredFrom, registeredTo]);
+  }, [desk.data, needle, phoneNeedle, filter, sort, registeredFrom, registeredTo]);
 
   const pageSize = 12;
   const pages = Math.max(1, Math.ceil(visible.length / pageSize));

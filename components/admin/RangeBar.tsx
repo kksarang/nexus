@@ -5,6 +5,7 @@ import { useDesk } from "@/components/admin/AdminShell";
 
 const presets = [
   ["today", "Today"],
+  ["yesterday", "Yesterday"],
   ["week", "This week"],
   ["month", "This month"],
   ["year", "This year"],

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { hours, messages, nav, site, whatsappLink } from "@/lib/site";
+import { footerLinks, hours, messages, nav, site, whatsappLink } from "@/lib/site";
 
 export function Footer() {
   return (
@@ -20,6 +20,13 @@ export function Footer() {
           <p className="text-[0.7rem] font-semibold tracking-[0.2em] text-cyan uppercase">Explore</p>
           <ul className="mt-4 space-y-2 text-sm text-mist">
             {nav.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="hover:text-paper">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+            {footerLinks.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="hover:text-paper">
                   {item.label}

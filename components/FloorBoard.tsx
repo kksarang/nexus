@@ -133,6 +133,7 @@ export function FloorBoard({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [selected, setSelected] = useState<string>(only ?? stations[0].id);
   const [now, setNow] = useState(0);
+  const [collected, setCollected] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [errorBay, setErrorBay] = useState("");
@@ -243,6 +244,11 @@ export function FloorBoard({
     });
   }
 
+  function collectedRupees(id: string) {
+    const amount = Number(collected[id] ?? "");
+    return Number.isInteger(amount) && amount > 0 ? amount : undefined;
+  }
+
   function clear(id: string) {
     const session = sessionsRef.current[id];
     setSessions((current) => {
@@ -260,6 +266,7 @@ export function FloorBoard({
       startedAt: session.startedAt,
       endedAt: Date.now(),
       bookedMinutes: session.hours * 60 + session.extraMinutes,
+      collectedRupees: collectedRupees(id),
     });
   }
 
@@ -308,6 +315,8 @@ export function FloorBoard({
         onStart={start}
         onExtend={extend}
         onClear={clear}
+        collected={collected}
+        onCollect={(id, value) => setCollected((current) => ({ ...current, [id]: value.replace(/\D/g, "").slice(0, 6) }))}
       />
     );
   }
@@ -382,6 +391,8 @@ export function FloorBoard({
           onStart={() => start(station.id)}
           onExtend={() => extend(station.id)}
           onClear={() => clear(station.id)}
+          collected={collected[station.id] ?? ""}
+          onCollect={(value) => setCollected((current) => ({ ...current, [station.id]: value.replace(/\D/g, "").slice(0, 6) }))}
         />
       </div>
     </div>
@@ -400,6 +411,8 @@ function Desk({
   onStart,
   onExtend,
   onClear,
+  collected,
+  onCollect,
 }: {
   stationId: string;
   name: string;
@@ -412,6 +425,8 @@ function Desk({
   onStart: () => void;
   onExtend: () => void;
   onClear: () => void;
+  collected: string;
+  onCollect: (value: string) => void;
 }) {
   const remaining = session ? session.endsAt - now : 0;
   const complete = Boolean(session && now > 0 && remaining <= 0);
@@ -498,7 +513,17 @@ function Desk({
                   <p className="text-sm text-paper">{complete ? "Time is up." : "Clock is running."}</p>
                   <p className="font-tech text-[0.58rem] tracking-[0.18em] text-mist uppercase">Live timer</p>
                 </div>
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <label className="mt-7 block">
+                  <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Amount collected</span>
+                  <input
+                    inputMode="numeric"
+                    value={collected}
+                    onChange={(event) => onCollect(event.target.value)}
+                    className="desk-input mt-1"
+                    placeholder="Leave blank if nothing was collected"
+                  />
+                </label>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <button type="button" className="btn btn-primary w-full" onClick={onExtend}>
                     + 15 minutes
                   </button>
@@ -694,6 +719,8 @@ function ConsoleWall({
   onStart,
   onExtend,
   onClear,
+  collected,
+  onCollect,
 }: {
   board: readonly (typeof stations)[number][];
   sessions: Record<string, Session>;
@@ -706,6 +733,8 @@ function ConsoleWall({
   onStart: (id: string) => void;
   onExtend: (id: string) => void;
   onClear: (id: string) => void;
+  collected: Record<string, string>;
+  onCollect: (id: string, value: string) => void;
 }) {
   return (
     <div>
@@ -782,6 +811,16 @@ function ConsoleWall({
                         Extra time +{extraMinutes} min · {formatRupees(extraCost)}
                       </p>
                     ) : null}
+                    <label className="mt-4 block">
+                      <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Collected ₹</span>
+                      <input
+                        inputMode="numeric"
+                        value={collected[item.id] ?? ""}
+                        onChange={(event) => onCollect(item.id, event.target.value)}
+                        className="desk-input mt-1"
+                        placeholder="Blank if not collected"
+                      />
+                    </label>
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <button type="button" className="btn btn-primary w-full px-2" onClick={() => onExtend(item.id)}>
                         + 15 extra

@@ -115,6 +115,7 @@ export type FinishedPlay = {
   startedAt: number;
   endedAt: number;
   bookedMinutes: number;
+  collectedRupees?: number;
 };
 
 export function pointsProgress(weeklyPoints: number, redeemed: boolean) {

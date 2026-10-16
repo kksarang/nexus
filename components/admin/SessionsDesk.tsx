@@ -6,13 +6,13 @@ import { useDesk } from "@/components/admin/AdminShell";
 import { formatIst, hoursLabel, inRange } from "@/lib/adminStats";
 import { stations } from "@/lib/site";
 
-export function SessionsDesk() {
+export function SessionsDesk({ mode = "all" }: { mode?: "live" | "history" | "all" }) {
   const desk = useDesk();
   const [now, setNow] = useState(0);
   const [player, setPlayer] = useState("");
   const [station, setStation] = useState("all");
   const [staffId, setStaffId] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(mode === "live" ? "active" : mode === "history" ? "completed" : "all");
   const [openId, setOpenId] = useState("");
 
   useEffect(() => {
@@ -31,8 +31,9 @@ export function SessionsDesk() {
     const matchesStation = station === "all" || session.stationId === station;
     const matchesStaff = staffId === "all" || session.by === staffId;
     const matchesStatus = status === "all" || session.status === status;
+    const matchesMode = mode === "live" ? session.status === "active" : mode === "history" ? session.status !== "active" : true;
     const matchesRange = session.status === "active" || inRange(session.endedAt, desk.from, desk.to);
-    return matchesPlayer && matchesStation && matchesStaff && matchesStatus && matchesRange;
+    return matchesPlayer && matchesStation && matchesStaff && matchesStatus && matchesMode && matchesRange;
   });
   const staffIds = [...new Set((desk.data?.sessions ?? []).map((session) => session.by).filter(Boolean))];
   const selected = sessions.find((session) => session.id === openId);
@@ -40,7 +41,7 @@ export function SessionsDesk() {
   return (
     <div className="grid gap-5">
       <div>
-        <h1 className="text-4xl tracking-wide text-paper uppercase">Sessions</h1>
+        <h1 className="text-4xl tracking-wide text-paper uppercase">{mode === "live" ? "Live sessions" : mode === "history" ? "Session history" : "Sessions"}</h1>
         <p className="mt-2 max-w-2xl text-sm text-mist">
           A running session is saved when a signed-in staff member starts the timer. Closing it writes points once. A second close does not add points again.
         </p>
@@ -83,7 +84,7 @@ export function SessionsDesk() {
                   <td className="px-3 py-3">{session.stationName}</td>
                   <td className="px-3 py-3 text-mist">{formatIst(session.startedAt)}</td>
                   <td className="px-3 py-3">{session.status === "active" ? `${hoursLabel(elapsed)} running` : `${session.paidMinutes} min`}</td>
-                  <td className="px-3 py-3">{session.status === "completed" ? `₹${session.amountRupees}${session.amountRecorded ? "" : " est."}` : "—"}</td>
+                  <td className="px-3 py-3">{session.amountRecorded ? `₹${session.amountRupees}` : "Not recorded"}</td>
                   <td className="px-3 py-3">{session.points}</td>
                   <td className="px-3 py-3">{session.status}</td>
                 </tr>

@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  browserLocalPersistence,
   isSignInWithEmailLink,
   onAuthStateChanged,
   sendSignInLinkToEmail,
+  setPersistence,
+  signInWithEmailAndPassword,
   signInWithEmailLink,
   signOut,
 } from "firebase/auth";
@@ -94,14 +97,26 @@ export function useStaff() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-function authMessage(reason: unknown) {
+export function authMessage(reason: unknown) {
   const code = typeof reason === "object" && reason && "code" in reason ? String(reason.code) : "";
   if (code === "auth/operation-not-allowed") {
-    return "In Firebase Authentication, turn on Email link (passwordless sign-in).";
+    return "In Firebase Authentication, turn on Email/Password and Email link.";
   }
   if (code === "auth/invalid-email") return "Enter a valid staff email.";
+  if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found" || code === "auth/invalid-login-credentials") {
+    return "That email or password was not accepted.";
+  }
+  if (code === "auth/too-many-requests") return "Too many attempts. Wait a moment and try again.";
   if (code === "auth/invalid-action-code") return "That sign-in link has expired. Request a new one.";
-  return "The sign-in email could not be sent.";
+  if (reason instanceof Error && reason.message) return reason.message;
+  return "Sign-in could not be completed.";
+}
+
+export async function signInWithPassword(email: string, password: string) {
+  const services = firebaseServices();
+  if (!services) throw new Error("Add the Firebase web app keys in .env.local, then restart the site.");
+  await setPersistence(services.auth, browserLocalPersistence);
+  await signInWithEmailAndPassword(services.auth, email.trim(), password);
 }
 
 export function StaffSignIn() {

@@ -17,9 +17,8 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
   const [confirm, setConfirm] = useState(false);
 
   useEffect(() => {
-    if (desk.role === "" || !playerId) return;
+    if (!desk.signedIn || !playerId) return;
     let cancel = false;
-    setLoading(true);
     void loadPlayerDetail(playerId)
       .then((next) => {
         if (cancel) return;
@@ -35,7 +34,7 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
     return () => {
       cancel = true;
     };
-  }, [playerId, desk.role]);
+  }, [desk.signedIn, playerId]);
 
   if (loading) return <div className="h-40 animate-pulse rounded-2xl bg-white/5" />;
   if (error || !detail) return <p className="text-sm text-magenta">{error || "Player not found."}</p>;
@@ -151,7 +150,7 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
                   <td className="px-3 py-3">{formatIst(session.startedAt)}</td>
                   <td className="px-3 py-3">{session.status === "active" ? "Running" : formatIst(session.endedAt)}</td>
                   <td className="px-3 py-3">{session.paidMinutes} min</td>
-                  <td className="px-3 py-3">{session.amountRecorded ? `₹${session.amountRupees}` : `₹${session.amountRupees} est.`}</td>
+                  <td className="px-3 py-3">{session.amountRecorded ? `₹${session.amountRupees}` : "Not recorded"}</td>
                   <td className="px-3 py-3">{session.points}</td>
                   <td className="px-3 py-3">{session.status}</td>
                   <td className="px-3 py-3 text-mist">{session.by ? session.by.slice(0, 8) : "—"}</td>

@@ -21,23 +21,23 @@ export function ReportsDesk() {
       <div>
         <h1 className="text-4xl tracking-wide text-paper uppercase">Reports</h1>
         <p className="mt-2 max-w-2xl text-sm text-mist">
-          Downloads use the selected dates. Rupee columns are estimated from the station rate. The site does not store a separate payment receipt.
+          Downloads use the selected dates. Rupee columns include only amounts staff recorded as collected. Blank or zero means no payment was stored.
         </p>
       </div>
       <RangeBar />
       <DeskNote />
       <div className="grid gap-3 sm:grid-cols-2">
-        <button type="button" className="btn btn-secondary" onClick={() => downloadCsv("daily-estimated-takings.csv", [
-          ["Date", "Sessions", "Paid hours", "Estimated rupees", "Points"],
+        <button type="button" className="btn btn-secondary" onClick={() => downloadCsv("daily-recorded-revenue.csv", [
+          ["Date", "Sessions", "Paid hours", "Recorded rupees", "Points"],
           ...groupDays(sessions),
         ])}>Daily estimated takings</button>
         <button type="button" className="btn btn-secondary" onClick={() => downloadCsv("station-hours.csv", [
-          ["Station", "Sessions", "Paid hours", "Estimated rupees"],
+          ["Station", "Sessions", "Paid hours", "Recorded rupees"],
           ...stations.map((station) => [station.name, station.sessions, hoursLabel(station.minutes), station.amount]),
         ])}>Hours by station</button>
         <button type="button" className="btn btn-secondary" onClick={() => downloadCsv("sessions.csv", [
-          ["Session", "Player", "Mobile", "Station", "Start", "End", "Paid minutes", "Estimated rupees", "Points", "Status", "Staff id"],
-          ...sessions.map((session) => [session.id, session.name, session.phone, session.stationName, formatIst(session.startedAt), formatIst(session.endedAt), session.paidMinutes, session.amountRupees, session.points, session.status, session.by]),
+          ["Session", "Player", "Mobile", "Station", "Start", "End", "Paid minutes", "Recorded rupees", "Payment recorded", "Points", "Status", "Staff id"],
+          ...sessions.map((session) => [session.id, session.name, session.phone, session.stationName, formatIst(session.startedAt), formatIst(session.endedAt), session.paidMinutes, session.amountRecorded ? session.amountRupees : "", session.amountRecorded ? "yes" : "no", session.points, session.status, session.by]),
         ])}>Session history</button>
         <button type="button" className="btn btn-secondary" onClick={() => downloadCsv("players.csv", [
           ["Name", "Mobile", "Registered", "Hours", "Sessions", "Available points", "Rewards", "Last played"],

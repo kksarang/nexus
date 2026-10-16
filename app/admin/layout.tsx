@@ -1,6 +1,12 @@
+import { Suspense, type ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import type { ReactNode } from "react";
+
+export const instant = false;
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <Suspense fallback={<div className="min-h-svh bg-[#070910]" />}>
+      <AdminShell>{children}</AdminShell>
+    </Suspense>
+  );
 }

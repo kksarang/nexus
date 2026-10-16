@@ -22,7 +22,7 @@ export function StationsDesk() {
     };
   }, []);
 
-  const today = istDayStart(now || Date.now());
+  const today = now ? istDayStart(now) : 0;
 
   return (
     <div className="grid gap-5">
@@ -37,6 +37,9 @@ export function StationsDesk() {
           const live = desk.data?.active.find((session) => session.stationId === station.id);
           const unavailable = desk.data?.unavailable.includes(station.id) ?? false;
           const todaySessions = (desk.data?.sessions ?? []).filter((session) => session.stationId === station.id && session.status === "completed" && session.endedAt >= today);
+          const todayMinutes = todaySessions.reduce((total, session) => total + session.paidMinutes, 0);
+          const allTodayMinutes = (desk.data?.sessions ?? []).filter((session) => session.status === "completed" && session.endedAt >= today).reduce((total, session) => total + session.paidMinutes, 0);
+          const share = allTodayMinutes ? Math.round((todayMinutes / allTodayMinutes) * 100) : 0;
           const status = live ? "Occupied" : unavailable ? "Unavailable" : "Available";
           return (
             <article key={station.id} className="rounded-2xl border border-white/10 bg-[#101624] p-4">
@@ -53,7 +56,7 @@ export function StationsDesk() {
               ) : (
                 <p className="mt-4 text-sm text-mist">No player on this console.</p>
               )}
-              <p className="mt-3 text-sm text-mist">{todaySessions.length} sessions today · {hoursLabel(todaySessions.reduce((total, session) => total + session.paidMinutes, 0))} h</p>
+              <p className="mt-3 text-sm text-mist">{todaySessions.length} sessions today · {hoursLabel(todayMinutes)} h · ₹{todaySessions.reduce((total, session) => total + (session.amountRecorded ? session.amountRupees : 0), 0)} recorded{allTodayMinutes ? ` · ${share}% of today’s paid time` : ""}</p>
               {desk.canOperate ? (
                 <button
                   type="button"
