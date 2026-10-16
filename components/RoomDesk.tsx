@@ -328,7 +328,10 @@ export function RoomDesk() {
           void releaseStationAfterSession(play.stationId).catch(() => undefined);
           void recordPaidSession(play)
             .then(async (text) => {
-              setResult(text);
+              const money = play.collectedRupees
+                ? ` ₹${play.collectedRupees.toLocaleString("en-IN")} added to today's revenue.`
+                : " No amount was typed, so today's revenue did not change.";
+              setResult(`${text}${money}`);
               desk.reload();
               if (!normalizePhone(play.phone)) return;
               const next = await findCustomer(play.phone).catch(() => null);

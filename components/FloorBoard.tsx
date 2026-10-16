@@ -38,8 +38,28 @@ const MEMBER_STATIONS = ["01", "02", "03", "04"];
 const STORAGE_KEY = "nexus-floor";
 const MIN_PLAYERS = 1;
 const MAX_PLAYERS = 8;
-const MIN_HOURS = 1;
-const MAX_HOURS = 6;
+const DURATIONS = [
+  { hours: 0.5, label: "30 min" },
+  { hours: 1, label: "1 hour" },
+  { hours: 1.5, label: "1 hr 30" },
+  { hours: 2, label: "2 hours" },
+  { hours: 3, label: "3 hours" },
+] as const;
+
+function durationLabel(hours: number) {
+  const match = DURATIONS.find((item) => item.hours === hours);
+  if (match) return match.label;
+  const minutes = Math.round(hours * 60);
+  if (minutes < 60) return `${minutes} min`;
+  const whole = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!rest) return whole === 1 ? "1 hour" : `${whole} hours`;
+  return `${whole} hr ${rest} min`;
+}
+
+function memberSessionsFor(hours: number) {
+  return Math.max(1, Math.ceil(hours));
+}
 
 const emptyDraft = (): Draft => ({
   name: "",
@@ -290,13 +310,15 @@ export function FloorBoard({
       return;
     }
     const member = Boolean(draft.membershipId && MEMBER_STATIONS.includes(id));
-    if (member && draft.hours > (draft.membershipLeft ?? 0)) {
+    const memberSessions = memberSessionsFor(draft.hours);
+    if (member && memberSessions > (draft.membershipLeft ?? 0)) {
       setErrorBay(id);
-      setError(`Only ${draft.membershipLeft ?? 0} membership sessions are left. Lower the hours or collect payment for the extra time.`);
+      setError(`Only ${draft.membershipLeft ?? 0} membership sessions are left. Choose a shorter time or collect payment.`);
       return;
     }
     armAlarm();
     const startedAt = Date.now();
+    const bookedMinutes = Math.round(draft.hours * 60);
     setSessions((current) => ({
       ...current,
       [id]: {
@@ -306,7 +328,7 @@ export function FloorBoard({
         players: draft.players,
         hours: draft.hours,
         startedAt,
-        endsAt: startedAt + draft.hours * 60 * 60 * 1000,
+        endsAt: startedAt + bookedMinutes * 60 * 1000,
         alarmed: false,
         extraMinutes: 0,
         member,
@@ -326,8 +348,8 @@ export function FloorBoard({
       name,
       phone: draft.phone.trim(),
       startedAt,
-      bookedMinutes: draft.hours * 60,
-      ...(member ? { membershipId: draft.membershipId, memberSessions: draft.hours } : {}),
+      bookedMinutes,
+      ...(member ? { membershipId: draft.membershipId, memberSessions } : {}),
     });
   }
 
@@ -547,7 +569,7 @@ function Desk({
   const bookedHours = session?.hours ?? draft.hours;
   const extraMinutes = session?.extraMinutes ?? 0;
   const extraCost = hourly?.rupees != null ? Math.round((extraMinutes / 60) * hourly.rupees) : 0;
-  const amount = hourly?.rupees != null ? hourly.rupees * bookedHours + extraCost : null;
+  const amount = hourly?.rupees != null ? Math.round(hourly.rupees * bookedHours + extraCost) : null;
 
   return (
     <article className={`floor-card ${complete ? "is-complete" : ""} ${running ? "is-live" : ""}`}>
@@ -597,8 +619,7 @@ function Desk({
                     {privateRoom ? "In this room" : "Session"}
                   </p>
                   <p className="mt-2 text-sm text-paper">
-                    {session.players} {session.players === 1 ? "player" : "players"} · {session.hours}{" "}
-                    {session.hours === 1 ? "hour" : "hours"}
+                    {session.players} {session.players === 1 ? "player" : "players"} · {durationLabel(session.hours)}
                   </p>
                   <Amount
                     hourly={hourly?.rupees}
@@ -630,15 +651,18 @@ function Desk({
                     value={collected}
                     onChange={(event) => onCollect(event.target.value)}
                     className="desk-input mt-1"
-                    placeholder="Leave blank if nothing was collected"
+                    placeholder="Added to today's revenue"
                   />
                 </label>
+                <p className="mt-2 text-sm text-mist">
+                  If they leave early, type the amount and press Complete now. The clock stops and that amount is added to today&apos;s revenue.
+                </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button type="button" className="btn btn-primary w-full" onClick={onExtend}>
-                    + 15 minutes
+                  <button type="button" className="btn btn-primary w-full" onClick={onClear}>
+                    {complete ? "Clear station" : "Complete now"}
                   </button>
-                  <button type="button" className="btn btn-secondary w-full" onClick={onClear}>
-                    {complete ? "Clear station" : "End session"}
+                  <button type="button" className="btn btn-secondary w-full" onClick={onExtend}>
+                    + 15 minutes
                   </button>
                 </div>
               </div>
@@ -676,24 +700,15 @@ function Desk({
                   maxLength={120}
                 />
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <Stepper
-                  id={`${stationId}-players`}
-                  label="Players"
-                  value={draft.players}
-                  onChange={(players) => onDraft({ players })}
-                  min={MIN_PLAYERS}
-                  max={MAX_PLAYERS}
-                />
-                <Stepper
-                  id={`${stationId}-hours`}
-                  label="Hours"
-                  value={draft.hours}
-                  onChange={(hours) => onDraft({ hours })}
-                  min={MIN_HOURS}
-                  max={MAX_HOURS}
-                />
-              </div>
+              <Stepper
+                id={`${stationId}-players`}
+                label="Players"
+                value={draft.players}
+                onChange={(players) => onDraft({ players })}
+                min={MIN_PLAYERS}
+                max={MAX_PLAYERS}
+              />
+              <DurationPicker hours={draft.hours} onChange={(hours) => onDraft({ hours })} />
               <Amount hourly={hourly?.rupees} hours={draft.hours} amount={amount} unit={hourly?.unit} />
               {error ? <p className="text-sm text-magenta">{error}</p> : null}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -844,6 +859,27 @@ function CustomerFields({
   );
 }
 
+function DurationPicker({ hours, onChange }: { hours: number; onChange: (hours: number) => void }) {
+  return (
+    <fieldset>
+      <legend className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Time</legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {DURATIONS.map((item) => (
+          <button
+            key={item.hours}
+            type="button"
+            aria-pressed={hours === item.hours}
+            className={`rounded-full border px-3 py-1.5 text-sm ${hours === item.hours ? "border-cyan bg-cyan text-ink" : "border-white/15 text-paper"}`}
+            onClick={() => onChange(item.hours)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 function Amount({
   hourly,
   hours,
@@ -865,7 +901,7 @@ function Amount({
         <>
           <p className="mt-1 font-tech text-3xl text-paper">{formatRupees(amount)}</p>
           <p className="mt-1 text-xs text-mist">
-            {formatRupees(hourly)} {unit} × {hours} {hours === 1 ? "hour" : "hours"}
+            {formatRupees(hourly)} {unit} × {durationLabel(hours)}
             {extra > 0 ? ` + ${formatRupees(extra)} extra` : ""}
           </p>
         </>
@@ -994,7 +1030,7 @@ function ConsoleWall({
           const extraMinutes = session?.extraMinutes ?? 0;
           const rate = hourly?.rupees ?? 0;
           const extraCost = Math.round((extraMinutes / 60) * rate);
-          const amount = session?.member ? extraCost : rate * hours + extraCost;
+          const amount = Math.round(session?.member ? extraCost : rate * hours + extraCost);
           const persons = session?.players ?? draft.players;
           const memberCovered = Boolean(draft.membershipId && MEMBER_STATIONS.includes(item.id));
           return (
@@ -1033,8 +1069,8 @@ function ConsoleWall({
                         <dd>{persons}</dd>
                       </div>
                       <div className="console-stat">
-                        <dt>Hours</dt>
-                        <dd>{hours}</dd>
+                        <dt>Time</dt>
+                        <dd>{durationLabel(hours)}</dd>
                       </div>
                       <div className="console-stat">
                         <dt>{session.member ? "Membership" : "Amount"}</dt>
@@ -1057,15 +1093,18 @@ function ConsoleWall({
                             value={collected[item.id] ?? ""}
                             onChange={(event) => onCollect(item.id, event.target.value)}
                             className="desk-input mt-1"
-                            placeholder="Blank if not collected"
+                            placeholder="Added to today's revenue"
                           />
                         </label>
+                        <p className="mt-2 text-xs text-mist">
+                          Leaving early? Type the amount, then Complete now. It is added to today&apos;s revenue.
+                        </p>
                         <div className="mt-4 grid grid-cols-2 gap-2">
-                          <button type="button" className="btn btn-primary w-full px-2" onClick={() => onExtend(item.id)}>
-                            + 15 extra
+                          <button type="button" className="btn btn-primary w-full px-2" onClick={() => onClear(item.id)}>
+                            {complete ? "Clear" : "Complete now"}
                           </button>
-                          <button type="button" className="btn btn-secondary w-full px-2" onClick={() => onClear(item.id)}>
-                            {complete ? "Clear" : "End"}
+                          <button type="button" className="btn btn-secondary w-full px-2" onClick={() => onExtend(item.id)}>
+                            + 15 extra
                           </button>
                         </div>
                       </>
@@ -1087,27 +1126,18 @@ function ConsoleWall({
                       onChoose={(customer) => onChoose(item.id, customer)}
                       onClearCustomer={() => onClearCustomer(item.id)}
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Stepper
-                        id={`${item.id}-persons`}
-                        label="Persons"
-                        value={draft.players}
-                        min={MIN_PLAYERS}
-                        max={MAX_PLAYERS}
-                        onChange={(players) => onDraft(item.id, { players })}
-                      />
-                      <Stepper
-                        id={`${item.id}-hours`}
-                        label="Hours"
-                        value={draft.hours}
-                        min={MIN_HOURS}
-                        max={MAX_HOURS}
-                        onChange={(hoursValue) => onDraft(item.id, { hours: hoursValue })}
-                      />
-                    </div>
+                    <Stepper
+                      id={`${item.id}-persons`}
+                      label="Persons"
+                      value={draft.players}
+                      min={MIN_PLAYERS}
+                      max={MAX_PLAYERS}
+                      onChange={(players) => onDraft(item.id, { players })}
+                    />
+                    <DurationPicker hours={draft.hours} onChange={(hoursValue) => onDraft(item.id, { hours: hoursValue })} />
                     {memberCovered ? (
                       <p className="rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan">
-                        Monthly member · uses {draft.hours} of {draft.membershipLeft ?? 0} sessions left. Nothing to collect.
+                        Monthly member · uses {memberSessionsFor(draft.hours)} of {draft.membershipLeft ?? 0} sessions left. Nothing to collect.
                       </p>
                     ) : (
                       <>
@@ -1115,9 +1145,9 @@ function ConsoleWall({
                           <p className="text-xs text-mist">The membership covers Stations 01 to 04 only. This console is charged normally.</p>
                         ) : null}
                         <p className="font-tech text-2xl text-paper">
-                          {formatRupees(rate * draft.hours)}
+                          {formatRupees(Math.round(rate * draft.hours))}
                           <span className="ml-2 font-sans text-xs tracking-normal text-mist">
-                            {formatRupees(rate)} × {draft.hours} {draft.hours === 1 ? "hour" : "hours"}
+                            {formatRupees(rate)} × {durationLabel(draft.hours)}
                           </span>
                         </p>
                       </>
