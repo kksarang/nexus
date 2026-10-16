@@ -59,11 +59,6 @@ export function StationsDesk() {
                   type="button"
                   className="btn btn-secondary mt-4"
                   onClick={() => {
-                    if (live && unavailable) return;
-                    if (live && !unavailable) {
-                      setError(`${station.name} still has a running session.`);
-                      return;
-                    }
                     const next = unavailable ? "available" : "unavailable";
                     if (live && next === "available") {
                       setError(`${station.name} still has a running session.`);

@@ -113,11 +113,20 @@ export function FloorBoard({
   wall = false,
   activeCustomer,
   onFinish,
+  onStart,
 }: {
   only?: string;
   wall?: boolean;
   activeCustomer?: { name: string; phone: string } | null;
   onFinish?: (play: FinishedPlay) => void;
+  onStart?: (play: {
+    stationId: string;
+    stationName: string;
+    name: string;
+    phone: string;
+    startedAt: number;
+    bookedMinutes: number;
+  }) => void;
 }) {
   const board = only ? stations.filter((item) => item.id === only) : stations;
   const [sessions, setSessions] = useState<Record<string, Session>>({});
@@ -223,6 +232,15 @@ export function FloorBoard({
     });
     setNotice("");
     setError("");
+    const bay = stations.find((item) => item.id === id);
+    onStart?.({
+      stationId: id,
+      stationName: bay?.name ?? id,
+      name,
+      phone: draft.phone.trim(),
+      startedAt,
+      bookedMinutes: draft.hours * 60,
+    });
   }
 
   function clear(id: string) {

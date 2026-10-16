@@ -1,12 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter, Orbitron } from "next/font/google";
-import { Suspense } from "react";
-import { BackToTop } from "@/components/BackToTop";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
-import { MobileBar } from "@/components/MobileBar";
 import { Providers } from "@/components/Providers";
+import { SiteFrame } from "@/components/SiteFrame";
 import { getSiteUrl, site } from "@/lib/site";
 import "./globals.css";
 
@@ -92,13 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="#content" className="skip-link">
               Skip to content
             </a>
-            <Suspense fallback={<div className="h-[4.5rem]" />}>
-              <Header />
-            </Suspense>
-            <div className="flex-1">{children}</div>
-            <Footer />
-            <MobileBar />
-            <BackToTop />
+            <SiteFrame>{children}</SiteFrame>
           </div>
         </Providers>
         <JsonLd />

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FloorBoard } from "@/components/FloorBoard";
 import { LoyaltyDesk } from "@/components/LoyaltyDesk";
+import { openLiveSession } from "@/lib/adminApi";
 import { findCustomer, recordPaidSession, type CustomerProfile } from "@/lib/loyaltyApi";
 import { normalizePhone } from "@/lib/loyalty";
 
@@ -19,6 +20,9 @@ export function RoomDesk() {
       <FloorBoard
         wall
         activeCustomer={customer ? { name: customer.name, phone: customer.phone } : null}
+        onStart={(play) => {
+          void openLiveSession(play).catch(() => undefined);
+        }}
         onFinish={(play) => {
           void recordPaidSession(play)
             .then(async (text) => {
