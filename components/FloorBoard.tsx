@@ -114,11 +114,13 @@ export function FloorBoard({
   activeCustomer,
   onFinish,
   onStart,
+  onExtend,
 }: {
   only?: string;
   wall?: boolean;
   activeCustomer?: { name: string; phone: string } | null;
   onFinish?: (play: FinishedPlay) => void;
+  onExtend?: (stationId: string, endsAt: number) => void;
   onStart?: (play: {
     stationId: string;
     stationName: string;
@@ -271,6 +273,9 @@ export function FloorBoard({
   }
 
   function extend(id: string) {
+    const existing = sessionsRef.current[id];
+    if (!existing) return;
+    const endsAt = Math.max(Date.now(), existing.endsAt) + 15 * 60 * 1000;
     setSessions((current) => {
       const session = current[id];
       if (!session) return current;
@@ -278,13 +283,14 @@ export function FloorBoard({
         ...current,
         [id]: {
           ...session,
-          endsAt: Math.max(Date.now(), session.endsAt) + 15 * 60 * 1000,
+          endsAt,
           extraMinutes: session.extraMinutes + 15,
           alarmed: false,
         },
       };
     });
     setNotice(`${stations.find((item) => item.id === id)?.name ?? "Station"} extended by 15 minutes.`);
+    onExtend?.(id, endsAt);
   }
 
   const station = board.find((item) => item.id === selected) ?? board[0];
@@ -805,7 +811,6 @@ function ConsoleWall({
                         <dd>{formatRupees(amount)}</dd>
                       </div>
                     </dl>
-                    {session.phone ? <p className="mt-3 text-sm text-cyan">{session.phone}</p> : null}
                     {extraMinutes > 0 ? (
                       <p className="mt-2 text-xs tracking-[0.12em] text-mist uppercase">
                         Extra time +{extraMinutes} min · {formatRupees(extraCost)}

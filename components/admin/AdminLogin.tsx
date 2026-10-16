@@ -17,7 +17,9 @@ export function AdminLogin() {
 
   return (
     <main id="content" className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-5 py-16">
-      <Logo className="h-14 w-auto" />
+      <div className="w-fit rounded-xl bg-slate-900 px-4 py-3">
+        <Logo className="h-12 w-auto" />
+      </div>
       <h1 className="mt-8 text-4xl tracking-wide text-paper uppercase">Admin Portal</h1>
       <p className="mt-2 text-sm text-mist">Staff email and password. A signed-in account still needs a staff record before the desk opens.</p>
 

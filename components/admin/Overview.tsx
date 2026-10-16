@@ -102,7 +102,7 @@ export function Overview() {
         <Card label="Rewards redeemed" value={String(rewards)} note="Free sessions are not added to revenue." />
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link href="/room" className="btn btn-primary">Start a session</Link>
+        <Link href="/admin/room" className="btn btn-primary">Start a session</Link>
         <Link href="/admin/players" className="btn btn-secondary">View all players</Link>
         <Link href="/admin/sessions" className="btn btn-secondary">View active sessions</Link>
         <Link href="/admin/loyalty" className="btn btn-secondary">View rewards</Link>

@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where } from "firebase/firestore";
 import {
   buildPlayers,
   recordedPayment,
@@ -8,8 +8,6 @@ import {
 } from "@/lib/adminStats";
 import { firebaseServices } from "@/lib/firebaseClient";
 import { istYearStart, millisOf, normalizePhone, phoneE164, weekKey } from "@/lib/loyalty";
-import { stations } from "@/lib/site";
-
 function requireDb() {
   const services = firebaseServices();
   if (!services) throw new Error("Add the Firebase web app keys in .env.local, then restart the site.");
@@ -314,16 +312,6 @@ export async function adjustPoints(playerId: string, delta: number, reason: stri
       at: serverTimestamp(),
     });
   });
-}
-
-export async function setStationAvailability(stationId: string, status: "available" | "unavailable") {
-  if (!stations.some((station) => station.id === stationId)) throw new Error("Unknown station.");
-  const { db, user } = requireDb();
-  await setDoc(
-    doc(db, "stations", stationId),
-    { status, by: user.uid, updatedAt: serverTimestamp() },
-    { merge: true },
-  );
 }
 
 export async function listStaffAccounts() {

@@ -78,8 +78,8 @@ export function PrivateRoom({ standalone = false }: { standalone?: boolean }) {
               <BookButton station="06" className="w-full sm:w-auto">
                 Book the private room
               </BookButton>
-              <Link href="/room" className="btn btn-secondary w-full sm:w-auto">
-                Who is in the room
+              <Link href="/stations#live" className="btn btn-secondary w-full sm:w-auto">
+                Is it free now?
               </Link>
               <WhatsAppButton message={messages.room} className="w-full sm:w-auto">
                 Ask about availability

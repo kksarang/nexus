@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { BookButton } from "@/components/BookSlot";
+import { StatusLine, StatusPill } from "@/components/LiveStatus";
 import { SectionIntro } from "@/components/SectionIntro";
 import { formatRupees } from "@/lib/format";
 import { rateForStation, stations } from "@/lib/site";
@@ -66,11 +67,13 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                 <span className={`absolute top-4 left-4 chip ${station.rate === "simulator" ? "border-[#D6FF3F]/50 text-[#D6FF3F]" : ""}`}>
                   {station.rate === "simulator" ? "Car simulator" : "Main floor"}
                 </span>
+                <StatusPill id={station.id} className="absolute top-4 right-4" />
                 <span className="absolute right-4 bottom-3 font-tech text-5xl text-white/90">{station.id}</span>
               </div>
               <div className="p-6">
                 <h3 className="text-2xl tracking-wide text-paper uppercase">{station.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-mist">{station.summary}</p>
+                <StatusLine id={station.id} />
                 <ul className="mt-4 space-y-1.5 text-sm text-paper/90">
                   {(station.rate === "simulator"
                     ? ["Car simulator", "₹180 an hour", "Book by the hour"]
@@ -104,11 +107,13 @@ export function Stations({ heading = true }: { heading?: boolean }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/10 to-transparent" />
                 <span className="absolute top-4 left-4 chip border-magenta/50 text-magenta">Private room</span>
+                <StatusPill id={room.id} className="absolute top-4 right-4" />
                 <span className="absolute right-4 bottom-3 font-tech text-5xl text-white/90">{room.id}</span>
               </div>
               <div className="p-6">
                 <h3 className="text-2xl tracking-wide text-paper uppercase">{room.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-mist">{room.summary}</p>
+                <StatusLine id={room.id} />
                 <ul className="mt-4 space-y-1.5 text-sm text-paper/90">
                   {["Your own room and PS5", "For friends, couples, and groups", "Book ahead"].map((perk) => (
                     <li key={perk} className="flex items-center gap-2">

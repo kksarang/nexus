@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, UserPlus } from "lucide-react";
+import { Eye, Pencil, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DeskNote } from "@/components/admin/RangeBar";
@@ -84,7 +84,7 @@ export function PlayersDesk() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl tracking-wide text-paper uppercase">Players</h1>
-          <p className="mt-2 text-sm text-mist">Available points are the lifetime balance. Weekly rewards do not reduce that balance.</p>
+          <p className="mt-2 text-sm text-mist">Open a player to see their hours, sessions, weekly progress, rewards, and full history.</p>
         </div>
         {desk.canOperate ? (
           <button type="button" className="btn btn-primary" onClick={() => openForm({ id: null, name: "", phone: "" })}>
@@ -177,48 +177,50 @@ export function PlayersDesk() {
           Download
         </button>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-white/10">
-        <table className="w-full min-w-[72rem] text-left text-sm">
-          <thead className="bg-[#101624] text-[0.62rem] tracking-[0.12em] text-mist uppercase">
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full min-w-[40rem] text-left text-sm">
+          <thead className="bg-[#101624] text-xs text-mist">
             <tr>
-              {["Player", "Mobile", "Registered", "Hours", "Sessions", "Week", "Month", "Year", "Available", "Rewards", "Last played", ""].map((heading, index) => (
-                <th key={heading || `col-${index}`} className="px-3 py-3 font-medium">{heading}</th>
+              {["Player", "Mobile", "Points", "Last played", ""].map((heading, index) => (
+                <th key={heading || `col-${index}`} className="px-4 py-3 font-medium">{heading}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {slice.length ? slice.map((player) => (
               <tr key={player.id} className="border-t border-white/10">
-                <td className="px-3 py-3"><Link href={`/admin/players/${player.id}`} className="text-cyan">{player.name}</Link></td>
-                <td className="px-3 py-3 text-mist">{player.phone || "—"}</td>
-                <td className="px-3 py-3 text-mist">{formatIst(player.createdAt)}</td>
-                <td className="px-3 py-3">{hoursLabel(player.lifetimeMinutes)}</td>
-                <td className="px-3 py-3">{player.sessionCount}</td>
-                <td className="px-3 py-3">{player.weekPoints}</td>
-                <td className="px-3 py-3">{player.monthPoints}</td>
-                <td className="px-3 py-3">{player.yearPoints}</td>
-                <td className="px-3 py-3 font-tech">{player.lifetimePoints}</td>
-                <td className="px-3 py-3">{player.rewardsRedeemed}</td>
-                <td className="px-3 py-3 text-mist">{formatIst(player.lastPlayedAt)}</td>
-                <td className="px-3 py-3 text-right">
-                  {desk.canOperate ? (
-                    <button
-                      type="button"
+                <td className="px-4 py-3 font-medium text-paper">{player.name}</td>
+                <td className="px-4 py-3 text-mist">{player.phone || "—"}</td>
+                <td className="px-4 py-3 text-paper">{player.lifetimePoints}</td>
+                <td className="px-4 py-3 text-mist">{player.lastPlayedAt ? formatIst(player.lastPlayedAt) : "Not yet"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <Link
+                      href={`/admin/players/${player.id}`}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50 hover:text-cyan"
-                      onClick={() => {
-                        openForm({ id: player.id, name: player.name, phone: player.phone });
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
                     >
-                      <Pencil size={13} aria-hidden="true" />
-                      Edit
-                    </button>
-                  ) : null}
+                      <Eye size={13} aria-hidden="true" />
+                      View details
+                    </Link>
+                    {desk.canOperate ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50 hover:text-cyan"
+                        onClick={() => {
+                          openForm({ id: player.id, name: player.name, phone: player.phone });
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        <Pencil size={13} aria-hidden="true" />
+                        Edit
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={12} className="px-3 py-6 text-mist">
+                <td colSpan={5} className="px-4 py-6 text-mist">
                   {desk.data?.players.length ? "No players match these filters." : "No players yet. Use Add player to register the first one."}
                 </td>
               </tr>

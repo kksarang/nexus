@@ -2,7 +2,6 @@
 
 import {
   BarChart3,
-  Gamepad2,
   Gift,
   History,
   IndianRupee,
@@ -11,8 +10,10 @@ import {
   Menu,
   Monitor,
   PanelLeft,
+  PlayCircle,
   Settings,
   Timer,
+  UserCog,
   Users,
   X,
 } from "lucide-react";
@@ -53,6 +54,7 @@ export function useDesk() {
 
 const links = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/room", label: "Start a Session", icon: PlayCircle },
   { href: "/admin/players", label: "Players / Customers", icon: Users },
   { href: "/admin/sessions", label: "Live Sessions", icon: Timer },
   { href: "/admin/history", label: "Session History", icon: History },
@@ -62,7 +64,7 @@ const links = [
   { href: "/admin/rewards", label: "Rewards & Redemptions", icon: Gift },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/reports", label: "Reports & Export", icon: BarChart3 },
-  { href: "/admin/staff", label: "Staff Management", icon: Gamepad2, admin: true },
+  { href: "/admin/staff", label: "Staff Management", icon: UserCog, admin: true },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -113,7 +115,7 @@ function NavLinks({
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               title={item.label}
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${active ? "bg-cyan/15 text-cyan" : "text-mist hover:bg-white/5 hover:text-paper"}`}
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${active ? "bg-blue-50 font-semibold text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
             >
               <Icon size={16} aria-hidden="true" />
               <span className={compact ? "sr-only" : ""}>{item.label}</span>
@@ -213,24 +215,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
     },
   };
 
-  if (onLogin) return <div className="min-h-svh bg-[#070910] text-paper">{children}</div>;
-  if (staff.status !== "staff") return <div className="min-h-svh bg-[#070910]" />;
+  if (onLogin) return <div className="admin-light min-h-svh bg-slate-50 text-slate-900">{children}</div>;
+  if (staff.status !== "staff") return <div className="admin-light min-h-svh bg-slate-50" />;
 
   return (
     <DeskContext.Provider value={desk}>
-      <div className={`min-h-svh bg-[#070910] text-paper lg:grid ${collapsed ? "lg:grid-cols-[4.5rem_1fr]" : "lg:grid-cols-[16.5rem_1fr]"}`}>
-        <aside className={`${open ? "fixed inset-0 z-40" : "hidden"} bg-black/70 lg:static lg:block lg:bg-transparent`}>
-          <div className={`flex h-full w-[16.5rem] flex-col border-r border-white/10 bg-[#0b1020] p-3 ${collapsed ? "lg:w-[4.5rem]" : ""}`}>
+      <div className={`admin-light min-h-svh bg-slate-50 text-slate-900 lg:grid ${collapsed ? "lg:grid-cols-[4.5rem_1fr]" : "lg:grid-cols-[16.5rem_1fr]"}`}>
+        <aside className={`${open ? "fixed inset-0 z-40" : "hidden"} bg-slate-900/40 lg:sticky lg:top-0 lg:block lg:h-svh lg:bg-transparent`}>
+          <div className={`flex h-full w-[16.5rem] flex-col border-r border-slate-200 bg-white p-3 ${collapsed ? "lg:w-[4.5rem]" : ""}`}>
             <div className="flex items-center justify-between gap-2 px-1">
               <div className={collapsed ? "lg:sr-only" : ""}>
-                <p className="font-tech text-[0.62rem] tracking-[0.22em] text-cyan uppercase">Nexus desk</p>
-                <p className="mt-2 truncate text-xs text-paper">{staff.email || "Staff"}</p>
-                <p className="text-[0.62rem] tracking-[0.14em] text-mist uppercase">{role}</p>
+                <p className="text-base font-semibold text-slate-900">Nexus Playzone</p>
+                <p className="text-xs text-slate-500">Business desk</p>
               </div>
-              <button type="button" className="hidden lg:grid size-9 place-items-center text-mist" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed((current) => !current)}>
+              <button type="button" className="hidden size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 lg:grid" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed((current) => !current)}>
                 <PanelLeft size={16} />
               </button>
-              <button type="button" className="lg:hidden" aria-label="Close menu" onClick={() => setOpen(false)}>
+              <button type="button" className="text-slate-600 lg:hidden" aria-label="Close menu" onClick={() => setOpen(false)}>
                 <X size={18} />
               </button>
             </div>
@@ -239,7 +240,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Suspense>
             <button
               type="button"
-              className="mt-auto flex items-center gap-2 px-3 py-2 text-sm text-mist"
+              className="mt-auto flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               onClick={() => {
                 const services = firebaseServices();
                 if (!services) return;
@@ -252,14 +253,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="min-w-0">
-          <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 lg:px-8">
-            <button type="button" className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
+          <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:px-8">
+            <button type="button" className="text-slate-700 lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
               <Menu size={20} />
             </button>
-            <p className="min-w-0 truncate text-sm text-mist">
-              {staff.email || "Staff"} · {role}
+            <p className="min-w-0 truncate text-sm text-slate-600">
+              Signed in as <span className="font-medium text-slate-900">{staff.email || "Staff"}</span>
+              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 capitalize">{role}</span>
             </p>
-            <Link href="/room" className="btn btn-primary min-h-10 shrink-0 px-4">
+            <Link href="/admin/room" className="btn btn-primary min-h-10 shrink-0 px-4">
               Start a session
             </Link>
           </header>

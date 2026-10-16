@@ -90,9 +90,17 @@ service cloud.firestore {
     }
 
     match /stations/{stationId} {
-      allow read: if isStaff();
+      // Public: holds only status, an expected free time, and a short reason. Never player details.
+      allow read: if true;
       allow create, update: if canOperate()
-        && request.resource.data.status in ["available", "unavailable"];
+        && stationId in ["01", "02", "03", "04", "05", "06"]
+        && request.resource.data.keys().hasOnly(["status", "until", "reason", "by", "updatedAt"])
+        && request.resource.data.status in ["available", "busy", "unavailable"]
+        && (request.resource.data.get("until", null) == null || request.resource.data.until is number)
+        && request.resource.data.get("reason", "") is string
+        && request.resource.data.get("reason", "").size() <= 60
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
 

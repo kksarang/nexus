@@ -4,6 +4,7 @@ import { Founders } from "@/components/Founders";
 import { Gallery } from "@/components/Gallery";
 import { Games } from "@/components/Games";
 import { Hero } from "@/components/Hero";
+import { LiveBoard } from "@/components/LiveStatus";
 import { Location } from "@/components/Location";
 import { LoyaltyHome } from "@/components/LoyaltyHome";
 import { Pricing } from "@/components/Pricing";
@@ -22,6 +23,7 @@ export default function HomePage() {
   return (
     <main id="content">
       <Hero />
+      <LiveBoard />
       <WhyNexus />
       <Stations />
       <PrivateRoom />

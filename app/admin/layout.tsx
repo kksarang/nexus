@@ -5,7 +5,7 @@ export const instant = false;
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<div className="min-h-svh bg-[#070910]" />}>
+    <Suspense fallback={<div className="admin-light min-h-svh bg-slate-50" />}>
       <AdminShell>{children}</AdminShell>
     </Suspense>
   );

@@ -587,3 +587,257 @@ select.desk-input {
     align-items: center;
   }
 }
+
+/* Admin desk: light business theme. The shared dark palette classes are remapped inside .admin-light only. */
+html:has(.admin-light) {
+  background: #f8fafc;
+  color-scheme: light;
+}
+
+.admin-light {
+  color-scheme: light;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.admin-light :focus-visible {
+  outline-color: #2563eb;
+}
+
+.admin-light ::selection {
+  background: #bfdbfe;
+  color: #0f172a;
+}
+
+.admin-light h1,
+.admin-light h2,
+.admin-light h3 {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.admin-light h1 {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+}
+
+.admin-light .font-tech,
+.admin-light .font-display {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+
+.admin-light .text-\[0\.62rem\],
+.admin-light .text-\[0\.6rem\],
+.admin-light .text-\[0\.58rem\] {
+  font-size: 0.72rem;
+}
+
+.admin-light .text-paper { color: #0f172a; }
+.admin-light .text-mist { color: #475569; }
+.admin-light .text-cyan { color: #1d4ed8; }
+.admin-light .text-magenta { color: #b91c1c; }
+.admin-light .text-violet { color: #6d28d9; }
+.admin-light .text-ink { color: #ffffff; }
+.admin-light .text-white\/30 { color: #94a3b8; }
+.admin-light .text-\[\#3BFF9D\] { color: #15803d; }
+.admin-light .text-\[\#FFC53D\] { color: #b45309; }
+.admin-light .hover\:text-paper:hover { color: #0f172a; }
+.admin-light .hover\:text-cyan:hover { color: #1d4ed8; }
+
+.admin-light .border-white\/10 { border-color: #e2e8f0; }
+.admin-light .border-white\/15 { border-color: #cbd5e1; }
+.admin-light .border-white\/40,
+.admin-light .hover\:border-white\/40:hover { border-color: #94a3b8; }
+.admin-light .border-cyan { border-color: #2563eb; }
+.admin-light .border-cyan\/30,
+.admin-light .border-cyan\/40,
+.admin-light .hover\:border-cyan\/50:hover { border-color: #93c5fd; }
+.admin-light .border-magenta\/40 { border-color: #fecaca; }
+.admin-light .border-violet\/40 { border-color: #ddd6fe; }
+
+.admin-light .bg-\[\#101624\],
+.admin-light .bg-\[\#0d1322\],
+.admin-light .bg-navy { background-color: #ffffff; }
+.admin-light .bg-\[\#0B101B\],
+.admin-light .bg-black\/30,
+.admin-light .bg-white\/\[0\.03\] { background-color: #f8fafc; }
+.admin-light .bg-white\/5,
+.admin-light .bg-white\/10,
+.admin-light .hover\:bg-white\/5:hover { background-color: #f1f5f9; }
+.admin-light .bg-cyan { background-color: #2563eb; }
+.admin-light .bg-cyan\/10,
+.admin-light .bg-cyan\/15 { background-color: #eff6ff; }
+.admin-light .bg-magenta\/10 { background-color: #fef2f2; }
+.admin-light .bg-violet\/10 { background-color: #f5f3ff; }
+.admin-light .bg-\[\#3BFF9D\] { background-color: #16a34a; }
+.admin-light .bg-\[\#FFC53D\] { background-color: #d97706; }
+.admin-light .bg-magenta { background-color: #dc2626; }
+
+.admin-light .btn {
+  min-height: 2.6rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.admin-light .btn:hover {
+  transform: none;
+}
+
+.admin-light .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-light .btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.admin-light .btn-primary:hover {
+  background: #1d4ed8;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.admin-light .btn-secondary {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.admin-light .btn-secondary:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.admin-light .desk-input {
+  min-height: 2.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  padding: 0.55rem 0.8rem;
+  color: #0f172a;
+  font-size: 0.95rem;
+  color-scheme: light;
+}
+
+.admin-light .desk-input::placeholder {
+  color: #94a3b8;
+}
+
+.admin-light .desk-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.admin-light select.desk-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #475569 50%),
+    linear-gradient(135deg, #475569 50%, transparent 50%);
+}
+
+.admin-light input[type="checkbox"] {
+  accent-color: #2563eb;
+}
+
+.admin-light .status-pill {
+  border-color: #cbd5e1;
+  color: #475569;
+  letter-spacing: 0.08em;
+}
+
+.admin-light .status-pill.is-live {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.admin-light .status-pill.is-done {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-light .console-ticket {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.admin-light .console-ticket.is-live {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 1px #93c5fd;
+}
+
+.admin-light .console-ticket.is-done {
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 1px #fca5a5;
+}
+
+.admin-light .console-rail {
+  background: #f1f5f9;
+  color: #475569;
+  border-right: 1px solid #e2e8f0;
+}
+
+.admin-light .console-rail strong {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+}
+
+.admin-light .console-ticket.is-live .console-rail {
+  background: #2563eb;
+  color: #dbeafe;
+}
+
+.admin-light .console-ticket.is-live .console-rail strong {
+  color: #ffffff;
+}
+
+.admin-light .console-ticket.is-done .console-rail {
+  background: #dc2626;
+  color: #fee2e2;
+}
+
+.admin-light .console-ticket.is-done .console-rail strong {
+  color: #ffffff;
+}
+
+.admin-light .clock-digits {
+  color: #0f172a !important;
+  font-family: inherit;
+  font-weight: 650;
+  text-shadow: none;
+}
+
+.admin-light .console-stat {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.admin-light .console-stat dt {
+  color: #64748b;
+}
+
+.admin-light .console-stat dd {
+  font-family: inherit;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+@media (max-width: 639px) {
+  .admin-light .console-rail {
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
