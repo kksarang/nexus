@@ -15,7 +15,10 @@ export const site = {
 } as const;
 
 export function getSiteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "development") return "http://localhost:3000";
+  return "https://www.nexusplayzone.com";
 }
 
 export function whatsappLink(message: string) {
@@ -249,10 +252,13 @@ export const gallery = [
   { src: "/images/private-room.jpg", alt: "The private gaming room", tag: "Private room" },
   { src: "/images/crew-session.jpg", alt: "Friends playing in front of a wide screen", tag: "Gaming moments", wide: true },
   { src: "/images/controller-glow.jpg", alt: "A controller in neon light", tag: "Setup" },
+  { src: "/images/founders/vishnu.jpg", alt: "Vishnu, co-founder of Nexus Playzone", tag: "Vishnu" },
+  { src: "/images/founders/sarang.jpg", alt: "Sarang, co-founder of Nexus Playzone", tag: "Sarang" },
+  { src: "/images/founders/adarsh.jpg", alt: "Adarsh, co-founder of Nexus Playzone", tag: "Adarsh" },
 ] as const;
 
 export const founders = [
-  { name: "Adarsh", role: "Co-founder", initial: "A" },
-  { name: "Sarang", role: "Co-founder", initial: "S" },
-  { name: "Vishnu", role: "Co-founder", initial: "V" },
+  { name: "Vishnu", role: "Co-founder", initial: "V", image: "/images/founders/vishnu.jpg" },
+  { name: "Sarang", role: "Co-founder", initial: "S", image: "/images/founders/sarang.jpg" },
+  { name: "Adarsh", role: "Co-founder", initial: "A", image: "/images/founders/adarsh.jpg" },
 ] as const;
