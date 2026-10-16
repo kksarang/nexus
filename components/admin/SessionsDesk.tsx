@@ -68,7 +68,7 @@ export function SessionsDesk({ mode = "all" }: { mode?: "live" | "history" | "al
       <div className="overflow-x-auto rounded-2xl border border-white/10">
         <table className="w-full min-w-[56rem] text-left text-sm">
           <thead className="text-[0.62rem] tracking-[0.12em] text-mist uppercase">
-            <tr>{["Player", "Console", "Started", "Elapsed / paid", "Amount", "Points", "Status"].map((heading) => <th key={heading} className="px-3 py-3 font-medium">{heading}</th>)}</tr>
+            <tr>{["Player", "Console", "Started", "Elapsed / paid", ...(desk.canSee("revenue") ? ["Amount"] : []), "Points", "Status"].map((heading) => <th key={heading} className="px-3 py-3 font-medium">{heading}</th>)}</tr>
           </thead>
           <tbody>
             {sessions.length ? sessions.map((session) => {
@@ -84,12 +84,12 @@ export function SessionsDesk({ mode = "all" }: { mode?: "live" | "history" | "al
                   <td className="px-3 py-3">{session.stationName}</td>
                   <td className="px-3 py-3 text-mist">{formatIst(session.startedAt)}</td>
                   <td className="px-3 py-3">{session.status === "active" ? `${hoursLabel(elapsed)} running` : `${session.paidMinutes} min`}</td>
-                  <td className="px-3 py-3">{session.amountRecorded ? `₹${session.amountRupees}` : "Not recorded"}</td>
+                  {desk.canSee("revenue") ? <td className="px-3 py-3">{session.amountRecorded ? `₹${session.amountRupees}` : "Not recorded"}</td> : null}
                   <td className="px-3 py-3">{session.points}</td>
                   <td className="px-3 py-3">{session.status}</td>
                 </tr>
               );
-            }) : <tr><td colSpan={7} className="px-3 py-6 text-mist">No sessions in this view.</td></tr>}
+            }) : <tr><td colSpan={desk.canSee("revenue") ? 7 : 6} className="px-3 py-6 text-mist">No sessions in this view.</td></tr>}
           </tbody>
         </table>
       </div>

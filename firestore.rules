@@ -9,12 +9,31 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
     }
 
+    function staffData() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data;
+    }
+
     function isAdmin() {
-      return isStaff();
+      return isStaff() && staffData().get("role", "admin") == "admin";
     }
 
     function canOperate() {
       return isStaff();
+    }
+
+    function canEdit(module) {
+      return isAdmin() || (isStaff() && staffData().get("access", {}).get(module, "none") == "edit");
+    }
+
+    function validAccess() {
+      return request.resource.data.access.keys().hasOnly(["customers", "gaming", "members", "history", "revenue", "loyalty", "reports"])
+        && request.resource.data.access.customers in ["none", "view", "edit"]
+        && request.resource.data.access.gaming in ["none", "view", "edit"]
+        && request.resource.data.access.members in ["none", "view", "edit"]
+        && request.resource.data.access.history in ["none", "view", "edit"]
+        && request.resource.data.access.revenue in ["none", "view", "edit"]
+        && request.resource.data.access.loyalty in ["none", "view", "edit"]
+        && request.resource.data.access.reports in ["none", "view", "edit"];
     }
 
     function fairPoints() {
@@ -30,19 +49,31 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
       allow create: if isAdmin()
-        && request.resource.data.keys().hasOnly(["name", "email", "role", "addedBy", "addedAt"])
+        && request.resource.data.keys().hasOnly(["name", "email", "username", "role", "access", "addedBy", "addedAt"])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 60
         && request.resource.data.email is string
-        && request.resource.data.role == "admin"
+        && request.resource.data.role in ["admin", "office"]
         && request.resource.data.addedBy == request.auth.uid
-        && request.resource.data.addedAt == request.time;
+        && request.resource.data.addedAt == request.time
+        && (
+          (request.resource.data.role == "admin" && !request.resource.data.keys().hasAny(["access", "username"]))
+          || (request.resource.data.role == "office"
+            && request.resource.data.username is string
+            && request.resource.data.username.size() > 0
+            && request.resource.data.username.size() <= 60
+            && validAccess())
+        );
       allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name", "access"])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 60;
+        && request.resource.data.name.size() <= 60
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["access"])
+          || (resource.data.get("role", "admin") == "office" && validAccess())
+        );
       // Removing a staff record only ends desk access; their sessions and changes stay.
       allow delete: if isAdmin() && request.auth.uid != uid;
     }
@@ -50,7 +81,7 @@ service cloud.firestore {
     match /phones/{phone} {
       allow get: if isStaff();
       allow list: if false;
-      allow create: if canOperate()
+      allow create: if (canEdit("customers") || canEdit("gaming") || canEdit("members"))
         && request.resource.data.customerId is string
         && request.resource.data.phoneE164 == "+91" + phone;
       allow update, delete: if false;
@@ -58,13 +89,13 @@ service cloud.firestore {
 
     match /customers/{customerId} {
       allow get, list: if isStaff();
-      allow create, update: if canOperate();
+      allow create, update: if canEdit("customers") || canEdit("gaming");
       allow delete: if false;
     }
 
     match /sessions/{sessionId} {
       allow read: if isStaff();
-      allow create: if canOperate() && (
+      allow create: if canEdit("gaming") && (
         (request.resource.data.status == "active"
           && request.resource.data.points == 0
           && request.resource.data.paidMinutes == 0
@@ -76,7 +107,7 @@ service cloud.firestore {
           && request.resource.data.endedAt >= request.resource.data.startedAt
           && fairPoints())
       );
-      allow update: if canOperate()
+      allow update: if canEdit("gaming")
         && (resource.data.status == "active" || resource.data.paidMinutes == 0)
         && request.resource.data.status == "completed"
         && request.resource.data.startedAt == resource.data.startedAt
@@ -89,7 +120,7 @@ service cloud.firestore {
     // Monthly memberships are set up by staff only and are never deleted; cancelling keeps the record.
     match /memberships/{id} {
       allow read: if isStaff();
-      allow create: if canOperate()
+      allow create: if canEdit("members")
         && request.resource.data.status == "active"
         && request.resource.data.sessionsUsed == 0
         && request.resource.data.sessionsTotal is int
@@ -101,7 +132,7 @@ service cloud.firestore {
         && request.resource.data.endAt > request.resource.data.startAt
         && request.resource.data.customerId is string
         && request.resource.data.createdBy == request.auth.uid;
-      allow update: if canOperate()
+      allow update: if canEdit("members")
         && resource.data.status == "active"
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["sessionsUsed", "lastUsedAt", "endAt", "status", "note"])
         && request.resource.data.sessionsUsed is int
@@ -114,19 +145,19 @@ service cloud.firestore {
 
     match /membershipUses/{id} {
       allow read: if isStaff();
-      allow create: if canOperate();
+      allow create: if canEdit("members") || canEdit("gaming");
       allow update, delete: if false;
     }
 
     match /weeklyProgress/{id} {
       allow read: if isStaff();
-      allow create, update: if canOperate();
+      allow create, update: if canEdit("gaming") || canEdit("loyalty");
       allow delete: if false;
     }
 
     match /pointsLedger/{id} {
       allow read: if isStaff();
-      allow create: if canOperate();
+      allow create: if canEdit("gaming") || canEdit("loyalty");
       allow update, delete: if false;
     }
 
@@ -139,7 +170,7 @@ service cloud.firestore {
     match /stations/{stationId} {
       // Public: holds only status, an expected free time, and a short reason. Never player details.
       allow read: if true;
-      allow create, update: if canOperate()
+      allow create, update: if canEdit("gaming")
         && stationId in ["01", "02", "03", "04", "05", "06"]
         && request.resource.data.keys().hasOnly(["status", "until", "reason", "by", "updatedAt"])
         && request.resource.data.status in ["available", "busy", "unavailable"]

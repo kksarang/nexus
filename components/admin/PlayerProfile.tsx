@@ -68,7 +68,7 @@ export function PlayerProfile({ playerId }: { playerId: string }) {
         Available points are the lifetime balance. This week&apos;s reward progress is separate and is not removed from that balance.
         {player.bankedMinutes ? ` ${player.bankedMinutes} paid minutes are waiting toward the next point.` : ""}
       </p>
-      {desk.canOperate ? (
+      {desk.canEdit("customers") ? (
         <form
           className="grid gap-3 rounded-2xl border border-white/10 bg-[#101624] p-4 sm:grid-cols-[1fr_auto]"
           onSubmit={(event) => {

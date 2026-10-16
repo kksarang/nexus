@@ -13,6 +13,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+import { parseAccess, type AccessMap } from "@/lib/deskAccess";
 import { firebaseServices } from "@/lib/firebaseClient";
 import {
   WEEKLY_TARGET,
@@ -349,7 +350,7 @@ export async function redeemReward(customerId: string) {
 }
 
 export type StaffLookup =
-  | { ok: true; role: string; name: string }
+  | { ok: true; role: string; name: string; username: string; access: AccessMap }
   | { ok: false; reason: "missing" | "blocked" | "timeout" | "unavailable" };
 
 export async function staffProfile(uid: string): Promise<StaffLookup> {
@@ -360,7 +361,15 @@ export async function staffProfile(uid: string): Promise<StaffLookup> {
     if (user) await user.getIdToken();
     const snap = await getDocFromServer(doc(services.db, "staff", uid));
     if (!snap.exists()) return { ok: false, reason: "missing" };
-    return { ok: true, role: String(snap.data().role ?? "staff"), name: String(snap.data().name ?? "") };
+    const data = snap.data();
+    const role = String(data.role ?? "admin") === "office" ? "office" : "admin";
+    return {
+      ok: true,
+      role,
+      name: String(data.name ?? ""),
+      username: String(data.username ?? ""),
+      access: parseAccess(role, data.access),
+    };
   };
   const reading = read()
     .catch((reason: unknown) => {

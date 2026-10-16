@@ -102,7 +102,7 @@ function AddMember({ now, onDone }: { now: number; onDone: (text: string) => voi
   );
 }
 
-function MemberDetail({ item, now, onChanged }: { item: Membership; now: number; onChanged: (text: string) => void }) {
+function MemberDetail({ item, now, editable, onChanged }: { item: Membership; now: number; editable: boolean; onChanged: (text: string) => void }) {
   const [uses, setUses] = useState<MembershipUse[]>([]);
   const [action, setAction] = useState<"" | "undo" | "extend" | "cancel">("");
   const [reason, setReason] = useState("");
@@ -158,7 +158,7 @@ function MemberDetail({ item, now, onChanged }: { item: Membership; now: number;
       </dl>
       {item.note ? <p className="text-sm text-mist">Note: {item.note}</p> : null}
 
-      {item.status === "active" ? (
+      {editable && item.status === "active" ? (
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" disabled={busy || state !== "active"} onClick={() => run(() => spendSessions(item.id, 1, "", ""), "1 session used.")}>
             Use 1 session now
@@ -281,9 +281,11 @@ export function MembersDesk() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary" onClick={() => { setAdding((value) => !value); setNotice(""); }}>
-            <UserPlus size={15} aria-hidden="true" /> {adding ? "Close" : "Add member"}
-          </button>
+          {desk.canEdit("members") ? (
+            <button type="button" className="btn btn-primary" onClick={() => { setAdding((value) => !value); setNotice(""); }}>
+              <UserPlus size={15} aria-hidden="true" /> {adding ? "Close" : "Add member"}
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn btn-secondary"
@@ -378,6 +380,7 @@ export function MembersDesk() {
           key={chosen.id}
           item={chosen}
           now={now}
+          editable={desk.canEdit("members")}
           onChanged={(text) => {
             setNotice(text);
             refresh();

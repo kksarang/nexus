@@ -86,7 +86,7 @@ export function PlayersDesk() {
           <h1 className="text-4xl tracking-wide text-paper uppercase">Players</h1>
           <p className="mt-2 text-sm text-mist">Open a player to see their hours, sessions, weekly progress, rewards, and full history.</p>
         </div>
-        {desk.canOperate ? (
+        {desk.canEdit("customers") ? (
           <button type="button" className="btn btn-primary" onClick={() => openForm({ id: null, name: "", phone: "" })}>
             <UserPlus size={16} aria-hidden="true" />
             Add player
@@ -202,7 +202,7 @@ export function PlayersDesk() {
                       <Eye size={13} aria-hidden="true" />
                       View details
                     </Link>
-                    {desk.canOperate ? (
+                    {desk.canEdit("customers") ? (
                       <button
                         type="button"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50 hover:text-cyan"

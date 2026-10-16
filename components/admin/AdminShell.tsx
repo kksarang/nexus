@@ -24,6 +24,7 @@ import { createContext, Suspense, useContext, useEffect, useState, useSyncExtern
 import { useStaff } from "@/components/StaffAccess";
 import { loadOperations, type DeskData } from "@/lib/adminApi";
 import { rangeFor } from "@/lib/adminStats";
+import { displayLogin, edits, homeFor, pathAllowed, sees, type AccessMap, type ModuleId } from "@/lib/deskAccess";
 import { firebaseServices } from "@/lib/firebaseClient";
 import { signOut } from "firebase/auth";
 
@@ -33,6 +34,9 @@ type DeskState = {
   role: string;
   canOperate: boolean;
   isAdmin: boolean;
+  access: AccessMap;
+  canSee: (id: ModuleId) => boolean;
+  canEdit: (id: ModuleId) => boolean;
   loading: boolean;
   signedIn: boolean;
   error: string;
@@ -53,21 +57,21 @@ export function useDesk() {
   return value;
 }
 
-const links = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/room", label: "Start a Session", icon: PlayCircle },
-  { href: "/admin/players", label: "Players / Customers", icon: Users },
-  { href: "/admin/members", label: "Monthly Members", icon: BadgeCheck },
-  { href: "/admin/sessions", label: "Live Sessions", icon: Timer },
-  { href: "/admin/history", label: "Session History", icon: History },
-  { href: "/admin/stations", label: "Consoles / Stations", icon: Monitor },
-  { href: "/admin/revenue", label: "Revenue", icon: IndianRupee },
-  { href: "/admin/loyalty", label: "Loyalty Points", icon: Gift },
-  { href: "/admin/rewards", label: "Rewards & Redemptions", icon: Gift },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/reports", label: "Reports & Export", icon: BarChart3 },
-  { href: "/admin/staff", label: "Staff Management", icon: UserCog, admin: true },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+const links: { href: string; label: string; icon: typeof LayoutDashboard; module: ModuleId | "home" | "admin" }[] = [
+  { href: "/admin", label: "Overview", icon: LayoutDashboard, module: "home" },
+  { href: "/admin/room", label: "Start a Session", icon: PlayCircle, module: "gaming" },
+  { href: "/admin/players", label: "Players / Customers", icon: Users, module: "customers" },
+  { href: "/admin/members", label: "Monthly Members", icon: BadgeCheck, module: "members" },
+  { href: "/admin/sessions", label: "Live Sessions", icon: Timer, module: "gaming" },
+  { href: "/admin/history", label: "Session History", icon: History, module: "history" },
+  { href: "/admin/stations", label: "Consoles / Stations", icon: Monitor, module: "gaming" },
+  { href: "/admin/revenue", label: "Revenue", icon: IndianRupee, module: "revenue" },
+  { href: "/admin/loyalty", label: "Loyalty Points", icon: Gift, module: "loyalty" },
+  { href: "/admin/rewards", label: "Rewards & Redemptions", icon: Gift, module: "loyalty" },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, module: "reports" },
+  { href: "/admin/reports", label: "Reports & Export", icon: BarChart3, module: "reports" },
+  { href: "/admin/staff", label: "Office staff", icon: UserCog, module: "admin" },
+  { href: "/admin/settings", label: "Settings", icon: Settings, module: "admin" },
 ];
 
 let monthBounds: { from: number; to: number } | null = null;
@@ -95,18 +99,20 @@ function istStamp(value: string, end: boolean) {
 function NavLinks({
   pathname,
   isAdmin,
+  access,
   compact,
   onNavigate,
 }: {
   pathname: string;
   isAdmin: boolean;
+  access: AccessMap;
   compact: boolean;
   onNavigate: () => void;
 }) {
   return (
     <nav className="mt-4 grid gap-1 overflow-y-auto" aria-label="Admin">
       {links
-        .filter((item) => !item.admin || isAdmin)
+        .filter((item) => (item.module === "home" || item.module === "admin" ? isAdmin : isAdmin || sees(access, item.module)))
         .map((item) => {
           const active = pathname !== "" && (item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href));
           const Icon = item.icon;
@@ -128,9 +134,9 @@ function NavLinks({
   );
 }
 
-function LiveNav({ isAdmin, compact, onNavigate }: { isAdmin: boolean; compact: boolean; onNavigate: () => void }) {
+function LiveNav({ isAdmin, access, compact, onNavigate }: { isAdmin: boolean; access: AccessMap; compact: boolean; onNavigate: () => void }) {
   const pathname = usePathname();
-  return <NavLinks pathname={pathname} isAdmin={isAdmin} compact={compact} onNavigate={onNavigate} />;
+  return <NavLinks pathname={pathname} isAdmin={isAdmin} access={access} compact={compact} onNavigate={onNavigate} />;
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -149,19 +155,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [generation, setGeneration] = useState(0);
 
-  const role = staff.role || "staff";
-  const isAdmin = staff.status === "staff";
-  const canOperate = staff.status === "staff";
+  const role = staff.role === "office" ? "office" : "admin";
+  const isAdmin = staff.status === "staff" && role === "admin";
+  const access = staff.access;
+  const canOperate = isAdmin || Object.values(access).includes("edit");
   const onLogin = pathname === "/admin/login";
 
   useEffect(() => {
     if (staff.status === "pending") return;
     if (staff.status === "staff") {
-      if (onLogin) router.replace("/admin");
+      if (onLogin) router.replace(homeFor(isAdmin, access));
+      else if (!pathAllowed(pathname, isAdmin, access)) router.replace(homeFor(isAdmin, access));
       return;
     }
     if (!onLogin) router.replace("/admin/login");
-  }, [staff.status, onLogin, router]);
+  }, [staff.status, onLogin, router, pathname, isAdmin, access]);
 
   useEffect(() => {
     if (staff.status !== "staff") return;
@@ -184,10 +192,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
     };
   }, [staff.status, from, to, generation]);
 
+  useEffect(() => {
+    if (!isAdmin || pathname !== "/admin") return;
+    const timer = window.setInterval(() => setGeneration((current) => current + 1), 60000);
+    return () => window.clearInterval(timer);
+  }, [isAdmin, pathname]);
+
   const desk: DeskState = {
     role,
     canOperate,
     isAdmin,
+    access,
+    canSee: (id) => isAdmin || sees(access, id),
+    canEdit: (id) => isAdmin || edits(access, id),
     loading,
     signedIn: staff.status === "staff",
     error,
@@ -237,8 +254,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <X size={18} />
               </button>
             </div>
-            <Suspense fallback={<NavLinks pathname="" isAdmin={isAdmin} compact={collapsed} onNavigate={() => setOpen(false)} />}>
-              <LiveNav isAdmin={isAdmin} compact={collapsed} onNavigate={() => setOpen(false)} />
+            <Suspense fallback={<NavLinks pathname="" isAdmin={isAdmin} access={access} compact={collapsed} onNavigate={() => setOpen(false)} />}>
+              <LiveNav isAdmin={isAdmin} access={access} compact={collapsed} onNavigate={() => setOpen(false)} />
             </Suspense>
             <button
               type="button"
@@ -260,14 +277,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <Menu size={20} />
             </button>
             <p className="min-w-0 truncate text-sm text-slate-600">
-              Signed in as <span className="font-medium text-slate-900">{staff.email || "Staff"}</span>
-              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 capitalize">{role}</span>
+              Signed in as <span className="font-medium text-slate-900">{displayLogin(staff.email, staff.username) || "Staff"}</span>
+              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{isAdmin ? "Admin" : "Office staff"}</span>
             </p>
-            <Link href="/admin/room" className="btn btn-primary min-h-10 shrink-0 px-4">
-              Start a session
-            </Link>
+            {isAdmin || sees(access, "gaming") ? (
+              <Link href="/admin/room" className="btn btn-primary min-h-10 shrink-0 px-4">
+                Start a session
+              </Link>
+            ) : <span />}
           </header>
-          <div className="px-4 py-6 lg:px-8">{children}</div>
+          <div className="px-4 py-6 lg:px-8">
+            {pathAllowed(pathname, isAdmin, access) ? children : (
+              <p className="text-sm text-mist">This dashboard is for admins. Office staff only see the sections an admin turned on for them.</p>
+            )}
+          </div>
         </div>
       </div>
     </DeskContext.Provider>

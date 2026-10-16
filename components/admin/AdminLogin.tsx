@@ -21,7 +21,7 @@ export function AdminLogin() {
         <Logo className="h-12 w-auto" />
       </div>
       <h1 className="mt-8 text-4xl tracking-wide text-paper uppercase">Admin Portal</h1>
-      <p className="mt-2 text-sm text-mist">Staff email and password. A signed-in account still needs a staff record before the desk opens.</p>
+      <p className="mt-2 text-sm text-mist">Admins sign in with email. Office staff sign in here too, with the username and password an admin created.</p>
 
       {!staff.configured ? (
         <div className="mt-8">
@@ -32,8 +32,8 @@ export function AdminLogin() {
           className="mt-8 grid gap-4"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!email.includes("@") || password.length < 6) {
-              setError("Enter the staff email and a password of at least 6 characters.");
+            if (!email.trim() || password.length < 6) {
+              setError("Enter your email or username, and a password of at least 6 characters.");
               return;
             }
             if (!staff.configured) {
@@ -49,9 +49,8 @@ export function AdminLogin() {
           }}
         >
           <label className="block text-sm text-mist">
-            Email
+            Email or username
             <input
-              type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="username"

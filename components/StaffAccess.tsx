@@ -11,6 +11,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { useState, useSyncExternalStore } from "react";
+import { fullAccess, loginEmail, type AccessMap } from "@/lib/deskAccess";
 import { firebaseConfig, firebaseServices } from "@/lib/firebaseClient";
 import { staffProfile } from "@/lib/loyaltyApi";
 
@@ -20,13 +21,15 @@ export type StaffSnap = {
   configured: boolean;
   uid: string;
   email: string;
+  username: string;
   role: string;
+  access: AccessMap;
   note: string;
   status: "off" | "out" | "link" | "pending" | "staff" | "denied";
 };
 
-const signedOut: StaffSnap = { configured: true, uid: "", email: "", role: "", note: "", status: "out" };
-const unconfigured: StaffSnap = { configured: false, uid: "", email: "", role: "", note: "", status: "off" };
+const signedOut: StaffSnap = { configured: true, uid: "", email: "", username: "", role: "", access: fullAccess(), note: "", status: "out" };
+const unconfigured: StaffSnap = { configured: false, uid: "", email: "", username: "", role: "", access: fullAccess(), note: "", status: "off" };
 
 function deniedNote(uid: string, reason: "missing" | "blocked" | "timeout" | "unavailable") {
   if (reason === "missing") {
@@ -79,12 +82,12 @@ function subscribe(notify: () => void) {
       publish({ ...signedOut }, notify);
       return;
     }
-    const base = { configured: true, uid: user.uid, email: user.email ?? "", role: "", note: "" };
+    const base = { configured: true, uid: user.uid, email: user.email ?? "", username: "", role: "", access: fullAccess(), note: "" };
     publish({ ...base, status: "pending" }, notify);
     void staffProfile(user.uid).then((profile) => {
       if (firebaseServices()?.auth.currentUser?.uid !== user.uid) return;
       if (profile.ok) {
-        publish({ ...base, role: profile.role, status: "staff" }, notify);
+        publish({ ...base, role: profile.role, username: profile.username, access: profile.access, status: "staff" }, notify);
         return;
       }
       publish({ ...base, note: deniedNote(user.uid, profile.reason), status: "denied" }, notify);
@@ -113,9 +116,9 @@ export function authMessage(reason: unknown) {
   if (code === "auth/operation-not-allowed") {
     return "In Firebase Authentication, turn on Email/Password and Email link.";
   }
-  if (code === "auth/invalid-email") return "Enter a valid staff email.";
+  if (code === "auth/invalid-email") return "Enter a valid email, or a username without @.";
   if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found" || code === "auth/invalid-login-credentials") {
-    return "Sign-in failed. That email or password is incorrect.";
+    return "Sign-in failed. That username or password is incorrect.";
   }
   if (code === "auth/too-many-requests") return "Too many attempts. Wait a moment and try again.";
   if (code === "auth/invalid-action-code") return "That sign-in link has expired. Request a new one.";
@@ -123,11 +126,11 @@ export function authMessage(reason: unknown) {
   return "Sign-in could not be completed.";
 }
 
-export async function signInWithPassword(email: string, password: string) {
+export async function signInWithPassword(login: string, password: string) {
   const services = firebaseServices();
   if (!services) throw new Error("Add the Firebase web app keys in .env.local, then restart the site.");
   await setPersistence(services.auth, browserLocalPersistence);
-  await signInWithEmailAndPassword(services.auth, email.trim(), password);
+  await signInWithEmailAndPassword(services.auth, loginEmail(login), password);
 }
 
 export function StaffSignIn() {

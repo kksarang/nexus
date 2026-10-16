@@ -140,12 +140,18 @@ export function StationsDesk() {
               ) : (
                 <p className="mt-3 text-sm text-mist">No player on this console.</p>
               )}
-              <p className="mt-2 text-sm text-mist">{todaySessions.length} sessions today · {hoursLabel(todayMinutes)} h · ₹{todaySessions.reduce((total, item) => total + (item.amountRecorded ? item.amountRupees : 0), 0)} recorded{allTodayMinutes ? ` · ${share}% of today’s paid time` : ""}</p>
+              {view.label === "Finishing up" ? (
+                <p className="mt-2 text-sm text-paper">The booked time is over. End the session on Start a Session so the website shows this console as free.</p>
+              ) : null}
+              {!session && entry?.status === "busy" ? (
+                <p className="mt-2 text-sm text-paper">The website says this console is in use, but no open session is saved yet. If you just started it, reload this page. Otherwise end it on Start a Session.</p>
+              ) : null}
+              <p className="mt-2 text-sm text-mist">{todaySessions.length} sessions today · {hoursLabel(todayMinutes)} h{desk.canSee("revenue") ? ` · ₹${todaySessions.reduce((total, item) => total + (item.amountRecorded ? item.amountRupees : 0), 0)} recorded${allTodayMinutes ? ` · ${share}% of today’s paid time` : ""}` : ""}</p>
 
               {error?.id === station.id ? <p role="alert" className="mt-3 rounded-lg border border-magenta/40 bg-magenta/10 px-3 py-2 text-sm text-magenta">{error.text}</p> : null}
               {saved?.id === station.id ? <p className="mt-3 rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan">{saved.text}</p> : null}
 
-              {desk.canOperate && editing === station.id ? (
+              {desk.canEdit("gaming") && editing === station.id ? (
                 <div className="mt-4 grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <fieldset>
                     <legend className="text-xs tracking-[0.14em] text-mist uppercase">Not available for</legend>
@@ -206,7 +212,7 @@ export function StationsDesk() {
                 </div>
               ) : null}
 
-              {desk.canOperate && editing !== station.id ? (
+              {desk.canEdit("gaming") && editing !== station.id ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {held ? (
                     <>

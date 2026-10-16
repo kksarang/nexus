@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { downloadCsv, formatIst } from "@/lib/adminStats";
+import { loginEmail, parseAccess, type AccessMap } from "@/lib/deskAccess";
 import { firebaseConfig, firebaseServices } from "@/lib/firebaseClient";
 import { millisOf } from "@/lib/loyalty";
 
@@ -35,19 +36,25 @@ function friendly(reason: unknown, fallback: string) {
   return reason instanceof Error && reason.message ? reason.message : fallback;
 }
 
-export type StaffRow = { id: string; name: string; email: string; role: string; addedAt: number };
+export type StaffRow = { id: string; name: string; email: string; username: string; role: "admin" | "office"; access: AccessMap; addedAt: number };
 
 export async function listStaff(): Promise<StaffRow[]> {
   const { db } = requireDb();
   const snap = await getDocs(collection(db, "staff"));
   return snap.docs
-    .map((item) => ({
-      id: item.id,
-      name: String(item.data().name ?? ""),
-      email: String(item.data().email ?? ""),
-      role: String(item.data().role ?? "admin"),
-      addedAt: millisOf(item.data().addedAt),
-    }))
+    .map((item) => {
+      const data = item.data();
+      const role = String(data.role ?? "admin") === "office" ? "office" : "admin";
+      return {
+        id: item.id,
+        name: String(data.name ?? ""),
+        email: String(data.email ?? ""),
+        username: String(data.username ?? ""),
+        role,
+        access: parseAccess(role, data.access),
+        addedAt: millisOf(data.addedAt),
+      } satisfies StaffRow;
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -86,6 +93,51 @@ export async function createStaffLogin(rawName: string, rawEmail: string, passwo
     throw new Error(`The login was created (user ID ${uid}) but access was not saved. ${friendly(reason, "")} Then use “Give access to an existing login” with that user ID.`);
   }
   return uid;
+}
+
+export async function createOfficeLogin(rawName: string, rawUsername: string, password: string, access: AccessMap) {
+  const name = rawName.trim();
+  const email = loginEmail(rawUsername);
+  const username = email.endsWith("@staff.nexusplayzone.com") ? email.slice(0, -"@staff.nexusplayzone.com".length) : email;
+  if (!name) throw new Error("Add the staff member's name.");
+  if (password.length < 8) throw new Error("Use a password of at least 8 characters.");
+  if (!Object.values(access).some((level) => level !== "none")) throw new Error("Choose at least one section this person can open.");
+  const config = firebaseConfig();
+  if (!config) throw new Error("The site is not connected to Firebase.");
+  requireDb();
+  const helper = initializeApp(config, `office-create-${Date.now()}`);
+  let uid = "";
+  try {
+    const helperAuth = getAuth(helper);
+    const created = await createUserWithEmailAndPassword(helperAuth, email, password);
+    uid = created.user.uid;
+    await signOut(helperAuth);
+  } catch (reason) {
+    throw new Error(friendly(reason, "Could not create the login."));
+  } finally {
+    await deleteApp(helper).catch(() => undefined);
+  }
+  const { db, user } = requireDb();
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(db, "staff", uid), { name, email, username, role: "office", access, addedBy: user.uid, addedAt: serverTimestamp() });
+    batch.set(doc(collection(db, "auditLogs")), { type: "staff-add", staffId: uid, after: { name, username, role: "office", access }, reason: "Office staff login created", by: user.uid, at: serverTimestamp() });
+    await batch.commit();
+  } catch (reason) {
+    throw new Error(`The login was created (user ID ${uid}) but access was not saved. ${friendly(reason, "")} Publish the latest Firestore rules, then use “Give access to an existing login” only for an admin. For office staff, delete that login in Firebase Authentication and create it again.`);
+  }
+  return { uid, username };
+}
+
+export async function updateStaffAccess(uid: string, access: AccessMap) {
+  if (!Object.values(access).some((level) => level !== "none")) throw new Error("Choose at least one section this person can open.");
+  const { db, user } = requireDb();
+  try {
+    await updateDoc(doc(db, "staff", uid), { access });
+    await setDoc(doc(collection(db, "auditLogs")), { type: "staff-access", staffId: uid, after: { access }, by: user.uid, at: serverTimestamp() });
+  } catch (reason) {
+    throw new Error(friendly(reason, "Could not update what this person can see."));
+  }
 }
 
 export async function grantExistingLogin(rawUid: string, rawName: string, rawEmail: string) {
@@ -182,7 +234,8 @@ function summarize(data: Record<string, unknown>) {
   if (type === "edit") return `Edited player ${String(before.name ?? "")} → ${String(after.name ?? "")} ${String(after.phone ?? "")}`.trim();
   if (type === "rename") return `Renamed player ${String(data.before ?? "")} → ${String(data.after ?? "")}`;
   if (type === "adjust") return `Points corrected ${String(data.before ?? "")} → ${String(data.after ?? "")}: ${String(data.reason ?? "")}`;
-  if (type === "staff-add") return `Gave desk access to ${String(after.name ?? "")}`;
+  if (type === "staff-add") return `Gave desk access to ${String(after.name ?? "")}${after.role === "office" ? " as office staff" : ""}`;
+  if (type === "staff-access") return "Changed what an office login can see";
   if (type === "staff-remove") return `Removed desk access for ${String(before.name ?? "")}`;
   if (type === "staff-rename") return `Renamed staff to ${String(after.name ?? "")}`;
   if (type === "notice-on") return `Website notice on: ${String(after.text ?? "")}`;

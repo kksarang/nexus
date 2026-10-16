@@ -18,7 +18,7 @@ export default function AdminRoomPage() {
         <div>
           <h1 className="text-4xl tracking-wide text-paper uppercase">Start a session</h1>
           <p className="mt-2 max-w-2xl text-sm text-mist">
-            Pick a console, add who is playing, and start the timer. Ending a session saves the paid minutes and the amount collected. Player history and points are on the Players page.
+            Pick a console and choose an existing customer by name or mobile. Their name and number fill in, so you do not type them again. Ending a session saves the paid minutes and the amount collected.
           </p>
         </div>
         <dl className="flex flex-wrap gap-2">

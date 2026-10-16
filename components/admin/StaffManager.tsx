@@ -4,8 +4,8 @@ import { KeyRound, Pencil, ShieldOff, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useDesk } from "@/components/admin/AdminShell";
 import { useStaff } from "@/components/StaffAccess";
-import { formatIst } from "@/lib/adminStats";
-import { createStaffLogin, grantExistingLogin, listStaff, removeStaff, renameStaff, sendStaffReset, type StaffRow } from "@/lib/manageApi";
+import { displayLogin, moduleInfo, officeDefaults, type AccessMap, type Level } from "@/lib/deskAccess";
+import { createOfficeLogin, createStaffLogin, grantExistingLogin, listStaff, removeStaff, renameStaff, sendStaffReset, updateStaffAccess, type StaffRow } from "@/lib/manageApi";
 
 type Mode = "none" | "new" | "existing";
 
@@ -15,7 +15,8 @@ export function StaffManager() {
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [mode, setMode] = useState<Mode>("none");
-  const [form, setForm] = useState({ name: "", email: "", password: "", uid: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", uid: "", access: officeDefaults() });
+  const [accessFor, setAccessFor] = useState<{ id: string; access: AccessMap } | null>(null);
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState<StaffRow | null>(null);
   const [confirmText, setConfirmText] = useState("");
@@ -53,26 +54,24 @@ export function StaffManager() {
 
   function closeForms() {
     setMode("none");
-    setForm({ name: "", email: "", password: "", uid: "" });
+    setForm({ name: "", email: "", password: "", uid: "", access: officeDefaults() });
   }
-
-  const sessionsBy = (id: string) => (desk.data?.sessions ?? []).filter((session) => session.by === id && session.status === "completed");
 
   return (
     <section id="staff" className="grid gap-4 rounded-xl border border-white/10 bg-[#101624] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl text-paper">Staff accounts</h2>
+          <h2 className="text-xl text-paper">Office staff and admins</h2>
           <p className="mt-1 max-w-2xl text-sm text-mist">
-            Everyone listed can use the full desk. Removing someone ends their desk access straight away. The sessions and changes they made stay in the records.
+            Only an admin can create logins. Office staff use the same sign-in page with a username and password, and they only see the sections you choose. They cannot create admins or other staff. An admin still has the full desk, including revenue.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" onClick={() => { closeForms(); setMode("new"); }}>
-            <UserPlus size={15} aria-hidden="true" /> Add staff
+            <UserPlus size={15} aria-hidden="true" /> Add office staff
           </button>
           <button type="button" className="btn btn-secondary" onClick={() => { closeForms(); setMode("existing"); }}>
-            Give access to an existing login
+            Add an admin
           </button>
         </div>
       </div>
@@ -85,19 +84,23 @@ export function StaffManager() {
           className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            const { name, email, password } = form;
-            void run(() => createStaffLogin(name, email, password), `${name.trim()} can now sign in at /admin with ${email.trim()}. Share the password with them privately.`).then((ok) => ok && closeForms());
+            const { name, email, password, access } = form;
+            void run(
+              () => createOfficeLogin(name, email, password, access),
+              `${name.trim()} can sign in on the admin page with username ${email.trim().toLowerCase()} and the password you set. Share it privately. Office staff cannot open sections you left off, and they cannot create staff.`,
+            ).then((ok) => ok && closeForms());
           }}
         >
-          <p className="text-sm font-semibold text-paper">New staff login</p>
+          <p className="text-sm font-semibold text-paper">New office staff login</p>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-sm text-mist">Name<input className="desk-input mt-1" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength={60} required /></label>
-            <label className="text-sm text-mist">Email<input type="email" className="desk-input mt-1" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} autoComplete="off" required /></label>
-            <label className="text-sm text-mist">Starting password<input type="text" className="desk-input mt-1" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} autoComplete="new-password" minLength={8} required /></label>
+            <label className="text-sm text-mist">Username<input className="desk-input mt-1" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} autoComplete="off" placeholder="counter1" required /></label>
+            <label className="text-sm text-mist">Password<input type="text" className="desk-input mt-1" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} autoComplete="new-password" minLength={8} required /></label>
           </div>
-          <p className="text-xs text-mist">At least 8 characters. They can change it later with “Send password reset”.</p>
+          <p className="text-xs text-mist">They type this username and password on the same admin sign-in page. Use 3 to 30 letters or numbers. Password at least 8 characters.</p>
+          <AccessPicker value={form.access} onChange={(access) => setForm({ ...form, access })} />
           <div className="flex gap-2">
-            <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Creating…" : "Create login and give access"}</button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Creating…" : "Create office login"}</button>
             <button type="button" className="btn btn-secondary" disabled={busy} onClick={closeForms}>Cancel</button>
           </div>
         </form>
@@ -112,13 +115,29 @@ export function StaffManager() {
             void run(() => grantExistingLogin(uid, name, email), `${name.trim()} now has desk access.`).then((ok) => ok && closeForms());
           }}
         >
-          <p className="text-sm font-semibold text-paper">Existing login</p>
-          <p className="text-xs text-mist">For someone who already has a login. Copy their User UID from Firebase console → Authentication → Users.</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="text-sm text-mist">User UID<input className="desk-input mt-1 font-mono" value={form.uid} onChange={(event) => setForm({ ...form, uid: event.target.value })} required /></label>
+          <p className="text-sm font-semibold text-paper">Another admin</p>
+          <p className="text-xs text-mist">Creates a full admin: email, password, and every section including revenue and staff. Office staff cannot do this.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-mist">Name<input className="desk-input mt-1" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} maxLength={60} required /></label>
-            <label className="text-sm text-mist">Email (optional)<input type="email" className="desk-input mt-1" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+            <label className="text-sm text-mist">Email<input type="email" className="desk-input mt-1" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} autoComplete="off" required /></label>
+            <label className="text-sm text-mist sm:col-span-2">Password<input type="text" className="desk-input mt-1" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} autoComplete="new-password" minLength={8} /></label>
           </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={busy}
+              onClick={() => {
+                const { name, email, password } = form;
+                void run(() => createStaffLogin(name, email, password), `${name.trim()} is an admin and can sign in with ${email.trim()}.`).then((ok) => ok && closeForms());
+              }}
+            >
+              {busy ? "Creating…" : "Create admin login"}
+            </button>
+            <button type="button" className="btn btn-secondary" disabled={busy} onClick={closeForms}>Cancel</button>
+          </div>
+          <p className="text-xs text-mist">Or give admin access to a login that already exists. Copy their User UID from Firebase console → Authentication → Users.</p>
+          <label className="text-sm text-mist">User UID<input className="desk-input mt-1 font-mono" value={form.uid} onChange={(event) => setForm({ ...form, uid: event.target.value })} /></label>
           <div className="flex gap-2">
             <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Saving…" : "Give access"}</button>
             <button type="button" className="btn btn-secondary" disabled={busy} onClick={closeForms}>Cancel</button>
@@ -129,7 +148,7 @@ export function StaffManager() {
       <div className="overflow-x-auto rounded-lg border border-white/10">
         <table className="w-full min-w-[46rem] text-left text-sm">
           <thead className="bg-white/[0.03] text-xs text-mist">
-            <tr>{["Name", "Email", "Added", "Sessions handled", ""].map((heading, index) => <th key={heading || index} className="px-4 py-3 font-medium">{heading}</th>)}</tr>
+            <tr>{["Name", "Login", "Role", "Can open", ""].map((heading, index) => <th key={heading || index} className="px-4 py-3 font-medium">{heading}</th>)}</tr>
           </thead>
           <tbody>
             {rows.map((row) => {
@@ -156,11 +175,16 @@ export function StaffManager() {
                       </>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-mist">{row.email || "Not saved"}</td>
-                  <td className="px-4 py-3 text-mist">{row.addedAt ? formatIst(row.addedAt) : "—"}</td>
-                  <td className="px-4 py-3 text-paper">{sessionsBy(row.id).length}</td>
+                  <td className="px-4 py-3 text-mist">{displayLogin(row.email, row.username) || "Not saved"}</td>
+                  <td className="px-4 py-3 text-paper">{row.role === "office" ? "Office staff" : "Admin"}</td>
+                  <td className="px-4 py-3 text-mist">{row.role === "office" ? accessLabel(row.access) : "Full desk, including revenue and staff"}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap justify-end gap-2">
+                      {row.role === "office" ? (
+                        <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50" onClick={() => setAccessFor({ id: row.id, access: { ...row.access } })}>
+                          Sections
+                        </button>
+                      ) : null}
                       <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:border-cyan/50" onClick={() => setEditing({ id: row.id, name: row.name })}>
                         <Pencil size={13} aria-hidden="true" /> Rename
                       </button>
@@ -193,6 +217,23 @@ export function StaffManager() {
         </table>
       </div>
 
+      {accessFor ? (
+        <form
+          className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const current = accessFor;
+            void run(() => updateStaffAccess(current.id, current.access), "Sections updated. They will see the change the next time the desk loads.").then((ok) => ok && setAccessFor(null));
+          }}
+        >
+          <AccessPicker value={accessFor.access} onChange={(access) => setAccessFor({ ...accessFor, access })} />
+          <div className="flex gap-2">
+            <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? "Saving…" : "Save sections"}</button>
+            <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setAccessFor(null)}>Cancel</button>
+          </div>
+        </form>
+      ) : null}
+
       {removing ? (
         <form
           className="grid gap-3 rounded-lg border border-magenta/40 bg-magenta/10 p-4"
@@ -216,5 +257,41 @@ export function StaffManager() {
         </form>
       ) : null}
     </section>
+  );
+}
+
+function accessLabel(access: AccessMap) {
+  const open = moduleInfo.filter((item) => access[item.id] !== "none");
+  if (!open.length) return "No sections";
+  return open.map((item) => `${item.label} (${access[item.id]})`).join(", ");
+}
+
+function AccessPicker({ value, onChange }: { value: AccessMap; onChange: (next: AccessMap) => void }) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-semibold text-paper">Sections</legend>
+      <p className="text-xs text-mist">Off hides that part of the desk. View lets them look. Edit lets them change it. Leave Revenue off if they should not see monthly revenue.</p>
+      {moduleInfo.map((item) => (
+        <div key={item.id} className="grid gap-2 rounded-lg border border-white/10 px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div>
+            <p className="text-sm text-paper">{item.label}</p>
+            <p className="text-xs text-mist">{item.detail}</p>
+          </div>
+          <div className="flex gap-1">
+            {(["none", "view", "edit"] as const satisfies readonly Level[]).map((level) => (
+              <button
+                key={level}
+                type="button"
+                aria-pressed={value[item.id] === level}
+                className={`rounded-full border px-3 py-1 text-xs capitalize ${value[item.id] === level ? "border-cyan bg-cyan text-ink" : "border-white/15 text-paper"}`}
+                onClick={() => onChange({ ...value, [item.id]: level })}
+              >
+                {level === "none" ? "Off" : level}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </fieldset>
   );
 }

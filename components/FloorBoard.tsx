@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
 import type { FinishedPlay } from "@/lib/loyalty";
 import { rateForStation, stations } from "@/lib/site";
@@ -24,9 +24,12 @@ type Draft = {
   note: string;
   players: number;
   hours: number;
+  customerId?: string;
   membershipId?: string;
   membershipLeft?: number;
 };
+
+export type DeskCustomer = { id: string; name: string; phone: string };
 
 export type DeskMembership = { id: string; left: number; endsLabel: string } | null;
 
@@ -120,13 +123,21 @@ export function FloorBoard({
   only,
   wall = false,
   activeCustomer,
+  customers = [],
+  customersLoading = false,
+  onLookupMembership,
+  readOnly = false,
   onFinish,
   onStart,
   onExtend,
 }: {
   only?: string;
   wall?: boolean;
-  activeCustomer?: { name: string; phone: string; membership?: DeskMembership } | null;
+  activeCustomer?: { id: string; name: string; phone: string; membership?: DeskMembership } | null;
+  customers?: DeskCustomer[];
+  customersLoading?: boolean;
+  onLookupMembership?: (customerId: string) => Promise<DeskMembership>;
+  readOnly?: boolean;
   onFinish?: (play: FinishedPlay) => void;
   onExtend?: (stationId: string, endsAt: number) => void;
   onStart?: (play: {
@@ -199,30 +210,78 @@ export function FloorBoard({
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
   }, [sessions, now]);
 
-  function baseDraft(existing?: Draft) {
-    if (existing) return existing;
-    if (activeCustomer) {
-      return {
-        ...emptyDraft(),
-        name: activeCustomer.name,
-        phone: activeCustomer.phone,
-        membershipId: activeCustomer.membership?.id,
-        membershipLeft: activeCustomer.membership?.left,
-      };
-    }
-    return emptyDraft();
+  function withCustomer(existing?: Draft) {
+    if (!activeCustomer) return existing ?? emptyDraft();
+    const untouched = !existing || (existing.customerId === undefined && !existing.name.trim() && !existing.phone.trim());
+    const samePerson = existing?.customerId === activeCustomer.id;
+    if (!untouched && !samePerson) return existing ?? emptyDraft();
+    return {
+      ...(existing ?? emptyDraft()),
+      name: activeCustomer.name,
+      phone: activeCustomer.phone,
+      customerId: activeCustomer.id,
+      membershipId: activeCustomer.membership?.id,
+      membershipLeft: activeCustomer.membership?.left,
+    };
   }
 
   function draftFor(id: string) {
-    return baseDraft(drafts[id]);
+    return withCustomer(drafts[id]);
   }
 
   function updateDraft(id: string, patch: Partial<Draft>) {
-    setDrafts((current) => ({ ...current, [id]: { ...baseDraft(current[id]), ...patch } }));
+    setDrafts((current) => {
+      const base = withCustomer(current[id]);
+      const next = { ...base, ...patch };
+      const identityChange =
+        ("name" in patch && patch.name !== base.name) || ("phone" in patch && patch.phone !== base.phone);
+      if (identityChange && !("membershipId" in patch) && !("customerId" in patch)) {
+        next.customerId = undefined;
+        next.membershipId = undefined;
+        next.membershipLeft = undefined;
+      }
+      return { ...current, [id]: next };
+    });
     setError("");
   }
 
+  function chooseCustomer(id: string, customer: DeskCustomer) {
+    updateDraft(id, {
+      name: customer.name,
+      phone: customer.phone,
+      customerId: customer.id,
+      membershipId: undefined,
+      membershipLeft: undefined,
+    });
+    if (!onLookupMembership) return;
+    void onLookupMembership(customer.id).then((membership) => {
+      setDrafts((current) => {
+        const draft = current[id];
+        if (!draft || draft.customerId !== customer.id) return current;
+        return {
+          ...current,
+          [id]: { ...draft, membershipId: membership?.id, membershipLeft: membership?.left },
+        };
+      });
+    });
+  }
+
+  function clearCustomer(id: string) {
+    updateDraft(id, {
+      name: "",
+      phone: "",
+      customerId: "",
+      membershipId: undefined,
+      membershipLeft: undefined,
+    });
+  }
+
   function start(id: string) {
+    if (readOnly) {
+      setErrorBay(id);
+      setError("This login can view gaming, not start a session.");
+      return;
+    }
     const draft = draftFor(id);
     const name = draft.name.trim();
     if (!name) {
@@ -278,6 +337,7 @@ export function FloorBoard({
   }
 
   function clear(id: string) {
+    if (readOnly) return;
     const session = sessionsRef.current[id];
     setSessions((current) => {
       const next = { ...current };
@@ -299,6 +359,7 @@ export function FloorBoard({
   }
 
   function extend(id: string) {
+    if (readOnly) return;
     const existing = sessionsRef.current[id];
     if (!existing) return;
     const endsAt = Math.max(Date.now(), existing.endsAt) + 15 * 60 * 1000;
@@ -343,7 +404,12 @@ export function FloorBoard({
         error={error}
         errorBay={errorBay}
         draftFor={draftFor}
+        customers={customers}
+        customersLoading={customersLoading}
+        readOnly={readOnly}
         onDraft={updateDraft}
+        onChoose={chooseCustomer}
+        onClearCustomer={clearCustomer}
         onStart={start}
         onExtend={extend}
         onClear={clear}
@@ -418,8 +484,12 @@ export function FloorBoard({
           session={session}
           now={now}
           draft={draft}
+          customers={customers}
+          customersLoading={customersLoading}
           error={error}
           onDraft={(patch) => updateDraft(station.id, patch)}
+          onChoose={(customer) => chooseCustomer(station.id, customer)}
+          onClearCustomer={() => clearCustomer(station.id)}
           onStart={() => start(station.id)}
           onExtend={() => extend(station.id)}
           onClear={() => clear(station.id)}
@@ -438,8 +508,12 @@ function Desk({
   session,
   now,
   draft,
+  customers,
+  customersLoading,
   error,
   onDraft,
+  onChoose,
+  onClearCustomer,
   onStart,
   onExtend,
   onClear,
@@ -452,8 +526,12 @@ function Desk({
   session?: Session;
   now: number;
   draft: Draft;
+  customers: DeskCustomer[];
+  customersLoading: boolean;
   error: string;
   onDraft: (patch: Partial<Draft>) => void;
+  onChoose: (customer: DeskCustomer) => void;
+  onClearCustomer: () => void;
   onStart: () => void;
   onExtend: () => void;
   onClear: () => void;
@@ -578,33 +656,16 @@ function Desk({
                 <h3 className="mt-2 text-3xl text-paper sm:text-4xl">
                   {privateRoom ? "Who will be in the room" : "Add customer details"}
                 </h3>
-                <p className="mt-2 text-sm text-mist">Name is required. Phone and note are optional.</p>
+                <p className="mt-2 text-sm text-mist">Search an existing customer by name or mobile, or type someone new.</p>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-[0.62rem] uppercase tracking-[0.16em] text-mist">Customer name</span>
-                  <input
-                    value={draft.name}
-                    onChange={(event) => onDraft({ name: event.target.value })}
-                    className="desk-input mt-2"
-                    placeholder="Who is playing"
-                    autoComplete="name"
-                    maxLength={60}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[0.62rem] uppercase tracking-[0.16em] text-mist">Phone</span>
-                  <input
-                    value={draft.phone}
-                    onChange={(event) => onDraft({ phone: event.target.value })}
-                    className="desk-input mt-2"
-                    placeholder="Optional"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    maxLength={20}
-                  />
-                </label>
-              </div>
+              <CustomerFields
+                draft={draft}
+                customers={customers}
+                loading={customersLoading}
+                onDraft={onDraft}
+                onChoose={onChoose}
+                onClearCustomer={onClearCustomer}
+              />
               <label className="block">
                 <span className="text-[0.62rem] uppercase tracking-[0.16em] text-mist">Session note</span>
                 <input
@@ -648,6 +709,138 @@ function Desk({
         </div>
       </div>
     </article>
+  );
+}
+
+function CustomerFields({
+  draft,
+  customers,
+  loading,
+  onDraft,
+  onChoose,
+  onClearCustomer,
+}: {
+  draft: Draft;
+  customers: DeskCustomer[];
+  loading: boolean;
+  onDraft: (patch: Partial<Draft>) => void;
+  onChoose: (customer: DeskCustomer) => void;
+  onClearCustomer: () => void;
+}) {
+  const listId = useId();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [manual, setManual] = useState(false);
+  const needle = query.trim().toLowerCase();
+  const digits = query.replace(/\D/g, "");
+  const matches = customers
+    .filter((customer) => {
+      if (!needle) return true;
+      return customer.name.toLowerCase().includes(needle) || (digits.length >= 2 && customer.phone.includes(digits));
+    })
+    .slice(0, 8);
+
+  if (draft.customerId && draft.name) {
+    return (
+      <div className="rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2">
+        <p className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Customer</p>
+        <p className="mt-1 text-sm font-semibold text-paper">{draft.name}</p>
+        <p className="text-sm text-mist">{draft.phone || "No mobile on file"}</p>
+        <button type="button" className="mt-2 text-sm font-semibold text-cyan" onClick={onClearCustomer}>
+          Change customer
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      <div className="relative">
+        <label className="block">
+          <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Existing customer</span>
+          <input
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => window.setTimeout(() => setOpen(false), 150)}
+            className="desk-input mt-1"
+            placeholder="Search name or mobile"
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-autocomplete="list"
+          />
+        </label>
+        {open ? (
+          <ul id={listId} role="listbox" className="mt-1 max-h-52 overflow-auto rounded-lg border border-white/15 bg-[#101624]">
+            {loading && customers.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-mist">Loading customers…</li>
+            ) : customers.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-mist">No saved customers yet.</li>
+            ) : matches.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-mist">No customer matches that name or number.</li>
+            ) : (
+              matches.map((customer) => (
+                <li key={customer.id} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-white/5"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      onChoose(customer);
+                      setQuery("");
+                      setOpen(false);
+                      setManual(false);
+                    }}
+                  >
+                    <span className="font-medium text-paper">{customer.name}</span>
+                    <span className="text-mist">{customer.phone || "No mobile"}</span>
+                  </button>
+                </li>
+              ))
+            )}
+            {customers.length > matches.length ? (
+              <li className="px-3 py-2 text-xs text-mist">Keep typing to search the rest of the list.</li>
+            ) : null}
+          </ul>
+        ) : null}
+      </div>
+      {manual ? (
+        <div className="grid gap-3">
+          <label className="block">
+            <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Booking name</span>
+            <input
+              value={draft.name}
+              onChange={(event) => onDraft({ name: event.target.value })}
+              className="desk-input mt-1"
+              placeholder="Who is playing"
+              autoComplete="name"
+              maxLength={60}
+            />
+          </label>
+          <label className="block">
+            <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Mobile number</span>
+            <input
+              value={draft.phone}
+              onChange={(event) => onDraft({ phone: event.target.value })}
+              className="desk-input mt-1"
+              placeholder="10-digit number for points"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={16}
+            />
+          </label>
+        </div>
+      ) : (
+        <button type="button" className="text-left text-sm font-semibold text-cyan" onClick={() => setManual(true)}>
+          Not in the list? Enter name and mobile
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -747,7 +940,12 @@ function ConsoleWall({
   error,
   errorBay,
   draftFor,
+  customers,
+  customersLoading,
+  readOnly,
   onDraft,
+  onChoose,
+  onClearCustomer,
   onStart,
   onExtend,
   onClear,
@@ -761,7 +959,12 @@ function ConsoleWall({
   error: string;
   errorBay: string;
   draftFor: (id: string) => Draft;
+  customers: DeskCustomer[];
+  customersLoading: boolean;
+  readOnly: boolean;
   onDraft: (id: string, patch: Partial<Draft>) => void;
+  onChoose: (id: string, customer: DeskCustomer) => void;
+  onClearCustomer: (id: string) => void;
   onStart: (id: string) => void;
   onExtend: (id: string) => void;
   onClear: (id: string) => void;
@@ -843,24 +1046,30 @@ function ConsoleWall({
                         Extra time +{extraMinutes} min · {formatRupees(extraCost)}
                       </p>
                     ) : null}
-                    <label className="mt-4 block">
-                      <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Collected ₹</span>
-                      <input
-                        inputMode="numeric"
-                        value={collected[item.id] ?? ""}
-                        onChange={(event) => onCollect(item.id, event.target.value)}
-                        className="desk-input mt-1"
-                        placeholder="Blank if not collected"
-                      />
-                    </label>
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <button type="button" className="btn btn-primary w-full px-2" onClick={() => onExtend(item.id)}>
-                        + 15 extra
-                      </button>
-                      <button type="button" className="btn btn-secondary w-full px-2" onClick={() => onClear(item.id)}>
-                        {complete ? "Clear" : "End"}
-                      </button>
-                    </div>
+                    {readOnly ? (
+                      <p className="mt-4 text-sm text-mist">View only. This login cannot change a running session.</p>
+                    ) : (
+                      <>
+                        <label className="mt-4 block">
+                          <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Collected ₹</span>
+                          <input
+                            inputMode="numeric"
+                            value={collected[item.id] ?? ""}
+                            onChange={(event) => onCollect(item.id, event.target.value)}
+                            className="desk-input mt-1"
+                            placeholder="Blank if not collected"
+                          />
+                        </label>
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          <button type="button" className="btn btn-primary w-full px-2" onClick={() => onExtend(item.id)}>
+                            + 15 extra
+                          </button>
+                          <button type="button" className="btn btn-secondary w-full px-2" onClick={() => onClear(item.id)}>
+                            {complete ? "Clear" : "End"}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <form
@@ -870,28 +1079,14 @@ function ConsoleWall({
                       onStart(item.id);
                     }}
                   >
-                    <label className="block">
-                      <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Booking name</span>
-                      <input
-                        value={draft.name}
-                        onChange={(event) => onDraft(item.id, { name: event.target.value })}
-                        className="desk-input"
-                        placeholder="Who is playing"
-                        maxLength={60}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Mobile number</span>
-                      <input
-                        value={draft.phone}
-                        onChange={(event) => onDraft(item.id, { phone: event.target.value })}
-                        className="desk-input"
-                        placeholder="10-digit number for points"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        maxLength={16}
-                      />
-                    </label>
+                    <CustomerFields
+                      draft={draft}
+                      customers={customers}
+                      loading={customersLoading}
+                      onDraft={(patch) => onDraft(item.id, patch)}
+                      onChoose={(customer) => onChoose(item.id, customer)}
+                      onClearCustomer={() => onClearCustomer(item.id)}
+                    />
                     <div className="grid grid-cols-2 gap-2">
                       <Stepper
                         id={`${item.id}-persons`}
@@ -928,9 +1123,13 @@ function ConsoleWall({
                       </>
                     )}
                     {errorBay === item.id && error ? <p className="text-sm text-magenta">{error}</p> : null}
-                    <button type="submit" className="btn btn-primary w-full">
-                      Start timer
-                    </button>
+                    {readOnly ? (
+                      <p className="text-sm text-mist">View only. This login cannot start a session.</p>
+                    ) : (
+                      <button type="submit" className="btn btn-primary w-full">
+                        Start timer
+                      </button>
+                    )}
                   </form>
                 )}
               </div>
