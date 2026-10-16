@@ -7,7 +7,7 @@ import { messages, whatsappLink } from "@/lib/site";
 
 export function MobileBar() {
   const pathname = usePathname();
-  if (pathname === "/floor" || pathname === "/room" || pathname === "/book") return null;
+  if (pathname === "/floor" || pathname === "/room" || pathname === "/book" || pathname === "/admin") return null;
 
   return (
     <>

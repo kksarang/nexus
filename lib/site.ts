@@ -88,6 +88,7 @@ export const nav = [
   { href: "/room", label: "Room" },
   { href: "/games", label: "Games" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/player", label: "Points" },
   { href: "/gallery", label: "Gallery" },
   { href: "/visit", label: "Visit" },
 ] as const;

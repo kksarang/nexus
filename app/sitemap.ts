@@ -10,6 +10,7 @@ const routes = [
   ["/pricing", 0.8],
   ["/gallery", 0.6],
   ["/visit", 0.8],
+  ["/player", 0.6],
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

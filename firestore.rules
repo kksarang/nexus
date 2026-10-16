@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+
+    function ownsPhone() {
+      return signedIn()
+        && request.auth.token.phone_number != null
+        && resource.data.phoneE164 == request.auth.token.phone_number;
+    }
+
+    match /staff/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if isStaff();
+      allow write: if false;
+    }
+
+    match /phones/{phone} {
+      allow get: if isStaff()
+        || (signedIn() && request.auth.token.phone_number == "+91" + phone);
+      allow list: if false;
+      allow create: if isStaff()
+        && request.resource.data.customerId is string
+        && request.resource.data.phoneE164 == "+91" + phone;
+      allow update, delete: if false;
+    }
+
+    match /customers/{customerId} {
+      allow get: if isStaff()
+        || (signedIn()
+          && request.auth.token.phone_number != null
+          && resource.data.phoneE164 == request.auth.token.phone_number);
+      allow list: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if false;
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if isStaff() || ownsPhone();
+      allow create: if isStaff()
+        && request.resource.data.startedAt is number
+        && request.resource.data.endedAt is number
+        && request.resource.data.endedAt >= request.resource.data.startedAt
+        && request.resource.data.paidMinutes is int
+        && request.resource.data.paidMinutes >= 0
+        && request.resource.data.paidMinutes <= int((request.resource.data.endedAt - request.resource.data.startedAt) / 60000)
+        && request.resource.data.points is int
+        && request.resource.data.points >= 0
+        && request.resource.data.points <= int(request.resource.data.paidMinutes / 60) + 1;
+      allow update, delete: if false;
+    }
+
+    match /weeklyProgress/{id} {
+      allow get: if isStaff() || ownsPhone() || (signedIn() && resource == null);
+      allow list: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if false;
+    }
+
+    match /pointsLedger/{id} {
+      allow read: if isStaff() || ownsPhone();
+      allow create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /auditLogs/{id} {
+      allow read, create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

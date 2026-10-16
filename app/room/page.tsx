@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FloorBoard } from "@/components/FloorBoard";
+import { RoomDesk } from "@/components/RoomDesk";
 import { formatRupees } from "@/lib/format";
 import { rates } from "@/lib/site";
 
@@ -42,11 +42,12 @@ export default function RoomPage() {
             </dl>
           </div>
           <p className="mt-5 max-w-2xl text-sm leading-relaxed text-mist">
-            Every console keeps its own booking. Add who is playing and how many persons, set the hours,
-            and start the timer. +15 extra adds fifteen minutes and the extra charge.
+            Every console keeps its own booking. Add who is playing, their mobile number, and how many persons,
+            then start the timer. Ending the session saves paid minutes toward loyalty points. +15 extra adds
+            fifteen minutes and the extra charge.
           </p>
           <div className="mt-6">
-            <FloorBoard wall />
+            <RoomDesk />
           </div>
         </div>
       </section>

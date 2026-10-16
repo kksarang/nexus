@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { formatClock, formatRupees } from "@/lib/format";
+import type { FinishedPlay } from "@/lib/loyalty";
 import { rates, stations } from "@/lib/site";
 
 type Session = {
@@ -10,6 +11,7 @@ type Session = {
   note: string;
   players: number;
   hours: number;
+  startedAt: number;
   endsAt: number;
   alarmed: boolean;
   extraMinutes: number;
@@ -77,6 +79,10 @@ function asSession(value: unknown): Session | null {
     note: typeof item.note === "string" ? item.note : "",
     players: item.players,
     hours: item.hours,
+    startedAt:
+      typeof item.startedAt === "number"
+        ? item.startedAt
+        : item.endsAt - item.hours * 60 * 60 * 1000 - (typeof item.extraMinutes === "number" ? item.extraMinutes : 0) * 60 * 1000,
     endsAt: item.endsAt,
     alarmed: Boolean(item.alarmed),
     extraMinutes: typeof item.extraMinutes === "number" ? item.extraMinutes : 0,
@@ -102,7 +108,17 @@ function loadSessions() {
   }
 }
 
-export function FloorBoard({ only, wall = false }: { only?: string; wall?: boolean }) {
+export function FloorBoard({
+  only,
+  wall = false,
+  activeCustomer,
+  onFinish,
+}: {
+  only?: string;
+  wall?: boolean;
+  activeCustomer?: { name: string; phone: string } | null;
+  onFinish?: (play: FinishedPlay) => void;
+}) {
   const board = only ? stations.filter((item) => item.id === only) : stations;
   const [sessions, setSessions] = useState<Record<string, Session>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -161,12 +177,18 @@ export function FloorBoard({ only, wall = false }: { only?: string; wall?: boole
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
   }, [sessions, now]);
 
+  function baseDraft(existing?: Draft) {
+    if (existing) return existing;
+    if (activeCustomer) return { ...emptyDraft(), name: activeCustomer.name, phone: activeCustomer.phone };
+    return emptyDraft();
+  }
+
   function draftFor(id: string) {
-    return drafts[id] ?? emptyDraft();
+    return baseDraft(drafts[id]);
   }
 
   function updateDraft(id: string, patch: Partial<Draft>) {
-    setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? emptyDraft()), ...patch } }));
+    setDrafts((current) => ({ ...current, [id]: { ...baseDraft(current[id]), ...patch } }));
     setError("");
   }
 
@@ -179,6 +201,7 @@ export function FloorBoard({ only, wall = false }: { only?: string; wall?: boole
       return;
     }
     armAlarm();
+    const startedAt = Date.now();
     setSessions((current) => ({
       ...current,
       [id]: {
@@ -187,21 +210,38 @@ export function FloorBoard({ only, wall = false }: { only?: string; wall?: boole
         note: draft.note.trim(),
         players: draft.players,
         hours: draft.hours,
-        endsAt: Date.now() + draft.hours * 60 * 60 * 1000,
+        startedAt,
+        endsAt: startedAt + draft.hours * 60 * 60 * 1000,
         alarmed: false,
         extraMinutes: 0,
       },
     }));
-    setDrafts((current) => ({ ...current, [id]: emptyDraft() }));
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     setNotice("");
     setError("");
   }
 
   function clear(id: string) {
+    const session = sessionsRef.current[id];
     setSessions((current) => {
       const next = { ...current };
       delete next[id];
       return next;
+    });
+    if (!session || !onFinish) return;
+    const bay = stations.find((item) => item.id === id);
+    onFinish({
+      stationId: id,
+      stationName: bay?.name ?? id,
+      name: session.name,
+      phone: session.phone,
+      startedAt: session.startedAt,
+      endedAt: Date.now(),
+      bookedMinutes: session.hours * 60 + session.extraMinutes,
     });
   }
 
@@ -749,6 +789,18 @@ function ConsoleWall({
                         className="desk-input"
                         placeholder="Who is playing"
                         maxLength={60}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-[0.62rem] tracking-[0.16em] text-mist uppercase">Mobile number</span>
+                      <input
+                        value={draft.phone}
+                        onChange={(event) => onDraft(item.id, { phone: event.target.value })}
+                        className="desk-input"
+                        placeholder="10-digit number for points"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        maxLength={16}
                       />
                     </label>
                     <div className="grid grid-cols-2 gap-2">
