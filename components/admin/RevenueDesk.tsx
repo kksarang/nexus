@@ -2,10 +2,29 @@
 
 import { DeskNote, RangeBar } from "@/components/admin/RangeBar";
 import { useDesk } from "@/components/admin/AdminShell";
+import { useEffect, useState } from "react";
 import { closedSessions, dailyTotals, hoursLabel, stationTotals } from "@/lib/adminStats";
+import { listMemberships, type Membership } from "@/lib/membershipApi";
 
 export function RevenueDesk() {
   const desk = useDesk();
+  const [members, setMembers] = useState<Membership[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void listMemberships()
+      .then((list) => alive && setMembers(list))
+      .catch(() => alive && setMembers(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const joined = (members ?? []).filter((item) => {
+    const paidAt = item.createdAt || item.startAt;
+    return paidAt >= desk.from && paidAt <= desk.to && item.amountPaid > 0;
+  });
+  const memberMoney = joined.reduce((total, item) => total + item.amountPaid, 0);
   const closed = desk.data ? closedSessions(desk.data.sessions, desk.from, desk.to) : [];
   const recorded = closed.filter((session) => session.amountRecorded);
   const gross = recorded.reduce((total, session) => total + session.amountRupees, 0);
@@ -21,6 +40,7 @@ export function RevenueDesk() {
         <h1 className="text-4xl tracking-wide text-paper uppercase">Revenue</h1>
         <p className="mt-2 max-w-2xl text-sm text-mist">
           Only amounts a staff member typed as collected are included. Free reward sessions and sessions with no collected amount stay out of these totals. Refunds are not tracked, so net revenue is the same as recorded gross.
+          Monthly membership payments are shown on their own, on the day the membership was added. Sessions played on a membership have no amount.
         </p>
       </div>
       <RangeBar />
@@ -35,6 +55,8 @@ export function RevenueDesk() {
           ["Sessions without a payment", String(closed.length - recorded.length)],
           ["Private room", `₹${(privateRoom?.amount ?? 0).toLocaleString("en-IN")}`],
           ["Other consoles", `₹${standard.toLocaleString("en-IN")}`],
+          ["Monthly memberships", members ? `₹${memberMoney.toLocaleString("en-IN")} · ${joined.length}` : "Not loaded"],
+          ["Sessions + memberships", `₹${(gross + memberMoney).toLocaleString("en-IN")}`],
         ].map(([label, value]) => (
           <article key={label} className="rounded-2xl border border-white/10 bg-[#101624] p-4">
             <p className="text-[0.62rem] tracking-[0.14em] text-mist uppercase">{label}</p>

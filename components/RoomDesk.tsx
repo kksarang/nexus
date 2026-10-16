@@ -13,14 +13,21 @@ import {
   type CustomerProfile,
 } from "@/lib/loyaltyApi";
 import { normalizePhone, WEEKLY_TARGET } from "@/lib/loyalty";
+import { currentMembership, formatDay, sessionsLeft, spendSessions, type Membership } from "@/lib/membershipApi";
 import { markStationBusy, releaseStationAfterSession } from "@/lib/stationStatus";
 
 function CustomerLookup({
   customer,
   onCustomer,
+  membership,
+  useMember,
+  onUseMember,
 }: {
   customer: CustomerProfile | null;
   onCustomer: (customer: CustomerProfile | null) => void;
+  membership: Membership | null;
+  useMember: boolean;
+  onUseMember: (value: boolean) => void;
 }) {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -80,6 +87,12 @@ function CustomerLookup({
             <strong>{customer.name}</strong> is registered. Their name and number fill the next session you start.
           </p>
           {rewardReady ? <span className="rounded-full border border-cyan/40 bg-cyan/10 px-2.5 py-1 text-xs text-cyan">Free 30 minutes ready</span> : null}
+          {membership ? (
+            <label className="flex items-center gap-2 rounded-full border border-cyan/40 bg-cyan/10 px-3 py-1 text-xs text-cyan">
+              <input type="checkbox" checked={useMember} onChange={(event) => onUseMember(event.target.checked)} />
+              Monthly member · {sessionsLeft(membership)} of {membership.sessionsTotal} left · until {formatDay(membership.endAt)} · use for this booking
+            </label>
+          ) : null}
           <div className="ml-auto flex flex-wrap gap-2">
             {rewardReady ? (
               <button
@@ -166,20 +179,43 @@ function CustomerLookup({
 
 export function RoomDesk() {
   const [customer, setCustomer] = useState<CustomerProfile | null>(null);
+  const [membership, setMembership] = useState<Membership | null>(null);
+  const [useMember, setUseMember] = useState(true);
   const [result, setResult] = useState("");
+
+  function pickCustomer(next: CustomerProfile | null) {
+    setCustomer(next);
+    if (next?.id === customer?.id) return;
+    setMembership(null);
+    setUseMember(true);
+    if (next) void currentMembership(next.id).then(setMembership);
+  }
+
+  const deskMembership = membership && useMember ? { id: membership.id, left: sessionsLeft(membership), endsLabel: formatDay(membership.endAt) } : null;
 
   return (
     <>
-      <CustomerLookup customer={customer} onCustomer={setCustomer} />
+      <CustomerLookup customer={customer} onCustomer={pickCustomer} membership={membership} useMember={useMember} onUseMember={setUseMember} />
       {result ? (
         <p className="mb-4 rounded-xl border border-cyan/40 bg-cyan/10 px-4 py-3 text-sm text-paper" role="status">{result}</p>
       ) : null}
       <FloorBoard
         wall
-        activeCustomer={customer ? { name: customer.name, phone: customer.phone } : null}
+        activeCustomer={customer ? { name: customer.name, phone: customer.phone, membership: deskMembership } : null}
         onStart={(play) => {
           void openLiveSession(play).catch(() => undefined);
           void markStationBusy(play.stationId, play.startedAt + play.bookedMinutes * 60 * 1000).catch(() => undefined);
+          const count = play.memberSessions ?? 0;
+          if (play.membershipId && count) {
+            void spendSessions(play.membershipId, count, play.stationId, `${play.stationId}_${play.startedAt}`)
+              .then((updated) => {
+                setMembership(updated);
+                setResult(`${play.name}: used ${count} membership session${count > 1 ? "s" : ""}. ${sessionsLeft(updated)} left until ${formatDay(updated.endAt)}.`);
+              })
+              .catch((reason: unknown) => {
+                setResult(`The membership was not updated: ${reason instanceof Error ? reason.message : "unknown error"} Collect payment for this session, or fix it on the Members page.`);
+              });
+          }
         }}
         onExtend={(stationId, endsAt) => {
           void markStationBusy(stationId, endsAt).catch(() => undefined);

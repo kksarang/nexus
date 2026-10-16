@@ -1,8 +1,8 @@
 "use client";
 
-import { MessageCircle, Radio } from "lucide-react";
+import { MessageCircle, Phone, Radio } from "lucide-react";
 import { useSyncExternalStore } from "react";
-import { stations, whatsappLink } from "@/lib/site";
+import { site, stations, whatsappLink } from "@/lib/site";
 import { agoLabel, describeStatus, subscribeStationStatus, type StationStatus, type StatusView } from "@/lib/stationStatus";
 
 type Feed = { ready: boolean; failed: boolean; map: Record<string, StationStatus> };
@@ -77,6 +77,31 @@ function viewFor(live: ReturnType<typeof useLiveStations>, id: string): StatusVi
   return describeStatus(live.map[id], live.now);
 }
 
+function AskActions({ name }: { name: string }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      <a
+        href={`tel:${site.phoneTel}`}
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-semibold text-paper transition hover:border-cyan/60 hover:text-cyan"
+        aria-label={`Call to check if ${name} is free`}
+      >
+        <Phone size={13} aria-hidden="true" /> Call
+      </a>
+      <a
+        href={whatsappLink(`Hi Nexus, is ${name} free right now?`)}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-semibold text-paper transition hover:border-cyan/60 hover:text-cyan"
+        aria-label={`WhatsApp to check if ${name} is free`}
+      >
+        <MessageCircle size={13} aria-hidden="true" /> WhatsApp
+      </a>
+    </div>
+  );
+}
+
+const askTones: StatusView["tone"][] = ["unknown", "off"];
+
 export function StatusPill({ id, className = "" }: { id: string; className?: string }) {
   const live = useLiveStations();
   const view = viewFor(live, id);
@@ -105,6 +130,7 @@ export function StatusLine({ id }: { id: string }) {
       </p>
       <p className="mt-0.5 text-xs text-paper/80">{view.detail}</p>
       {ago ? <p className="mt-0.5 text-[11px] text-mist">{ago}</p> : null}
+      {live.ready && live.now && askTones.includes(view.tone) ? <AskActions name={stations.find((item) => item.id === id)?.name ?? `Station ${id}`} /> : null}
     </div>
   );
 }
@@ -165,6 +191,7 @@ export function LiveBoard() {
                   </div>
                   <p className="mt-2 text-xs text-paper/80">{view.detail}</p>
                   {ago ? <p className="mt-1 text-[11px] text-mist">{ago}</p> : null}
+                  {live.ready && live.now && askTones.includes(view.tone) ? <AskActions name={station.name} /> : null}
                 </li>
               );
             })}

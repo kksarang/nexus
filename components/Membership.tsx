@@ -43,9 +43,12 @@ export function Membership() {
               Saves {formatRupees(160 * plan.sessions - plan.rupees)} against {plan.sessions} walk-in hours
             </li>
           </ul>
-          <Link href={`/book?plan=${plan.key}`} className="btn btn-primary w-full lg:w-auto">
-            Join monthly
-          </Link>
+          <div className="grid gap-2 lg:justify-items-end">
+            <Link href={`/book?plan=${plan.key}`} className="btn btn-primary w-full lg:w-auto">
+              Ask to join
+            </Link>
+            <p className="text-xs text-mist lg:text-right">Pay and join at the counter.</p>
+          </div>
         </article>
       </div>
     </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BadgeCheck,
   BarChart3,
   Gift,
   History,
@@ -56,6 +57,7 @@ const links = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/room", label: "Start a Session", icon: PlayCircle },
   { href: "/admin/players", label: "Players / Customers", icon: Users },
+  { href: "/admin/members", label: "Monthly Members", icon: BadgeCheck },
   { href: "/admin/sessions", label: "Live Sessions", icon: Timer },
   { href: "/admin/history", label: "Session History", icon: History },
   { href: "/admin/stations", label: "Consoles / Stations", icon: Monitor },

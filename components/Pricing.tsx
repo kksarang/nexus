@@ -63,7 +63,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
                 </div>
                 {rate.key === "monthly" ? (
                   <Link href="/book?plan=monthly" className="btn btn-secondary mt-6 w-full">
-                    Join monthly
+                    Ask to join
                   </Link>
                 ) : (
                   <BookButton

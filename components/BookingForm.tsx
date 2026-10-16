@@ -344,7 +344,9 @@ export function BookingForm() {
 
       <div className="mt-7 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-sm text-xs leading-relaxed text-mist">
-          Sending opens WhatsApp with your details filled in. Your slot is confirmed when we reply.
+          {mode === "station"
+            ? "Sending opens WhatsApp with your details filled in. Your slot is confirmed when we reply."
+            : "Sending opens WhatsApp to ask about joining. Nothing is charged or saved online. We set up your membership at the counter when you pay, and it starts then."}
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <a href={`tel:${site.phoneTel}`} className="btn btn-secondary">
@@ -353,7 +355,7 @@ export function BookingForm() {
           </a>
           <button type="submit" className="btn btn-primary">
             <MessageCircle size={16} aria-hidden="true" />
-            {mode === "station" ? "Send booking" : "Request membership"}
+            {mode === "station" ? "Send booking" : "Ask to join"}
           </button>
         </div>
       </div>

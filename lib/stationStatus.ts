@@ -82,7 +82,7 @@ export function agoLabel(updatedAt: number, now: number) {
 }
 
 export function describeStatus(entry: StationStatus | undefined, now: number): StatusView {
-  if (!entry || !now) return { tone: "unknown", label: "Ask us", detail: "Live status is not set for this station yet." };
+  if (!entry || !now) return { tone: "unknown", label: "Ask us", detail: "Call or WhatsApp us to check if it is free." };
   const left = entry.until ? Math.ceil((entry.until - now) / MINUTE) : null;
   if (entry.status === "available" || (entry.status === "unavailable" && left !== null && left <= 0)) {
     return { tone: "free", label: "Available now", detail: "Walk in or book to hold it." };

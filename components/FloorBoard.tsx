@@ -15,6 +15,7 @@ type Session = {
   endsAt: number;
   alarmed: boolean;
   extraMinutes: number;
+  member: boolean;
 };
 
 type Draft = {
@@ -23,7 +24,13 @@ type Draft = {
   note: string;
   players: number;
   hours: number;
+  membershipId?: string;
+  membershipLeft?: number;
 };
+
+export type DeskMembership = { id: string; left: number; endsLabel: string } | null;
+
+const MEMBER_STATIONS = ["01", "02", "03", "04"];
 
 const STORAGE_KEY = "nexus-floor";
 const MIN_PLAYERS = 1;
@@ -86,6 +93,7 @@ function asSession(value: unknown): Session | null {
     endsAt: item.endsAt,
     alarmed: Boolean(item.alarmed),
     extraMinutes: typeof item.extraMinutes === "number" ? item.extraMinutes : 0,
+    member: item.member === true,
   };
 }
 
@@ -118,7 +126,7 @@ export function FloorBoard({
 }: {
   only?: string;
   wall?: boolean;
-  activeCustomer?: { name: string; phone: string } | null;
+  activeCustomer?: { name: string; phone: string; membership?: DeskMembership } | null;
   onFinish?: (play: FinishedPlay) => void;
   onExtend?: (stationId: string, endsAt: number) => void;
   onStart?: (play: {
@@ -128,6 +136,8 @@ export function FloorBoard({
     phone: string;
     startedAt: number;
     bookedMinutes: number;
+    membershipId?: string;
+    memberSessions?: number;
   }) => void;
 }) {
   const board = only ? stations.filter((item) => item.id === only) : stations;
@@ -191,7 +201,15 @@ export function FloorBoard({
 
   function baseDraft(existing?: Draft) {
     if (existing) return existing;
-    if (activeCustomer) return { ...emptyDraft(), name: activeCustomer.name, phone: activeCustomer.phone };
+    if (activeCustomer) {
+      return {
+        ...emptyDraft(),
+        name: activeCustomer.name,
+        phone: activeCustomer.phone,
+        membershipId: activeCustomer.membership?.id,
+        membershipLeft: activeCustomer.membership?.left,
+      };
+    }
     return emptyDraft();
   }
 
@@ -212,6 +230,12 @@ export function FloorBoard({
       setError("Add the customer name before starting.");
       return;
     }
+    const member = Boolean(draft.membershipId && MEMBER_STATIONS.includes(id));
+    if (member && draft.hours > (draft.membershipLeft ?? 0)) {
+      setErrorBay(id);
+      setError(`Only ${draft.membershipLeft ?? 0} membership sessions are left. Lower the hours or collect payment for the extra time.`);
+      return;
+    }
     armAlarm();
     const startedAt = Date.now();
     setSessions((current) => ({
@@ -226,6 +250,7 @@ export function FloorBoard({
         endsAt: startedAt + draft.hours * 60 * 60 * 1000,
         alarmed: false,
         extraMinutes: 0,
+        member,
       },
     }));
     setDrafts((current) => {
@@ -243,6 +268,7 @@ export function FloorBoard({
       phone: draft.phone.trim(),
       startedAt,
       bookedMinutes: draft.hours * 60,
+      ...(member ? { membershipId: draft.membershipId, memberSessions: draft.hours } : {}),
     });
   }
 
@@ -765,8 +791,9 @@ function ConsoleWall({
           const extraMinutes = session?.extraMinutes ?? 0;
           const rate = hourly?.rupees ?? 0;
           const extraCost = Math.round((extraMinutes / 60) * rate);
-          const amount = rate * hours + extraCost;
+          const amount = session?.member ? extraCost : rate * hours + extraCost;
           const persons = session?.players ?? draft.players;
+          const memberCovered = Boolean(draft.membershipId && MEMBER_STATIONS.includes(item.id));
           return (
             <li
               key={item.id}
@@ -807,8 +834,8 @@ function ConsoleWall({
                         <dd>{hours}</dd>
                       </div>
                       <div className="console-stat">
-                        <dt>Amount</dt>
-                        <dd>{formatRupees(amount)}</dd>
+                        <dt>{session.member ? "Membership" : "Amount"}</dt>
+                        <dd>{session.member ? (extraCost ? `+${formatRupees(extraCost)}` : "Prepaid") : formatRupees(amount)}</dd>
                       </div>
                     </dl>
                     {extraMinutes > 0 ? (
@@ -883,12 +910,23 @@ function ConsoleWall({
                         onChange={(hoursValue) => onDraft(item.id, { hours: hoursValue })}
                       />
                     </div>
-                    <p className="font-tech text-2xl text-paper">
-                      {formatRupees(rate * draft.hours)}
-                      <span className="ml-2 font-sans text-xs tracking-normal text-mist">
-                        {formatRupees(rate)} × {draft.hours} {draft.hours === 1 ? "hour" : "hours"}
-                      </span>
-                    </p>
+                    {memberCovered ? (
+                      <p className="rounded-lg border border-cyan/40 bg-cyan/10 px-3 py-2 text-sm text-cyan">
+                        Monthly member · uses {draft.hours} of {draft.membershipLeft ?? 0} sessions left. Nothing to collect.
+                      </p>
+                    ) : (
+                      <>
+                        {draft.membershipId ? (
+                          <p className="text-xs text-mist">The membership covers Stations 01 to 04 only. This console is charged normally.</p>
+                        ) : null}
+                        <p className="font-tech text-2xl text-paper">
+                          {formatRupees(rate * draft.hours)}
+                          <span className="ml-2 font-sans text-xs tracking-normal text-mist">
+                            {formatRupees(rate)} × {draft.hours} {draft.hours === 1 ? "hour" : "hours"}
+                          </span>
+                        </p>
+                      </>
+                    )}
                     {errorBay === item.id && error ? <p className="text-sm text-magenta">{error}</p> : null}
                     <button type="submit" className="btn btn-primary w-full">
                       Start timer

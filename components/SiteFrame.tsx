@@ -6,6 +6,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileBar } from "@/components/MobileBar";
+import { SiteNotice } from "@/components/SiteNotice";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
@@ -28,6 +29,7 @@ function Chrome({ children }: { children: ReactNode }) {
       <Footer />
       <MobileBar />
       <BackToTop />
+      <SiteNotice />
     </>
   );
 }
