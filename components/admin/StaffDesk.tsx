@@ -39,7 +39,7 @@ export function StaffDesk() {
       <div>
         <h1 className="text-4xl tracking-wide text-paper uppercase">Staff</h1>
         <p className="mt-2 max-w-2xl text-sm text-mist">
-          Accounts are created in Firebase Authentication with an email sign-in link. Add a Firestore document at staff/uid with role set to admin, staff, or manager. This page cannot invent an admin role from the browser.
+          Every account listed here has full access to the desk. To add someone, create their login in Firebase Authentication, then add a Firestore document at staff/uid with their name. The website cannot grant access by itself.
         </p>
       </div>
       {error ? <p className="text-sm text-magenta">{error}</p> : null}

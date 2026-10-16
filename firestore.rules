@@ -9,16 +9,12 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
     }
 
-    function staffRole() {
-      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role;
-    }
-
     function isAdmin() {
-      return isStaff() && staffRole() == "admin";
+      return isStaff();
     }
 
     function canOperate() {
-      return isStaff() && staffRole() != "manager";
+      return isStaff();
     }
 
     function fairPoints() {

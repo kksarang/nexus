@@ -146,8 +146,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [generation, setGeneration] = useState(0);
 
   const role = staff.role || "staff";
-  const isAdmin = staff.status === "staff" && role === "admin";
-  const canOperate = staff.status === "staff" && role !== "manager";
+  const isAdmin = staff.status === "staff";
+  const canOperate = staff.status === "staff";
   const onLogin = pathname === "/admin/login";
 
   useEffect(() => {
