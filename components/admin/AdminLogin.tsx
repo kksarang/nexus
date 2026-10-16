@@ -85,7 +85,7 @@ export function AdminLogin() {
           ) : null}
           {!error && staff.status === "denied" ? (
             <p className="rounded-xl border border-magenta/40 bg-magenta/10 px-3 py-2 text-sm text-magenta" role="alert">
-              Sign-in failed. The password was accepted, but Firestore has no readable staff/{staff.uid} record. If that document already exists, open Firestore, then Rules, and click Publish.
+              {staff.note}
             </p>
           ) : null}
           {!error && staff.status === "pending" ? (

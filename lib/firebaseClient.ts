@@ -1,6 +1,6 @@
 import { type FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { type Firestore, getFirestore, initializeFirestore } from "firebase/firestore";
 
 const webApp = {
   apiKey: "AIzaSyDnaYLtqK9bPp-Mb_h4YSjrp5qHe4afT00",
@@ -32,8 +32,20 @@ function app(): FirebaseApp | null {
   return getApps().length ? getApp() : initializeApp(config);
 }
 
+let database: Firestore | null = null;
+
+function firestore(firebaseApp: FirebaseApp) {
+  if (database) return database;
+  try {
+    database = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
+  } catch {
+    database = getFirestore(firebaseApp);
+  }
+  return database;
+}
+
 export function firebaseServices() {
   const firebaseApp = app();
   if (!firebaseApp) return null;
-  return { auth: getAuth(firebaseApp), db: getFirestore(firebaseApp) };
+  return { auth: getAuth(firebaseApp), db: firestore(firebaseApp) };
 }

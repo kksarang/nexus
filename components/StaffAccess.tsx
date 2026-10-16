@@ -21,11 +21,22 @@ export type StaffSnap = {
   uid: string;
   email: string;
   role: string;
+  note: string;
   status: "off" | "out" | "link" | "pending" | "staff" | "denied";
 };
 
-const signedOut: StaffSnap = { configured: true, uid: "", email: "", role: "", status: "out" };
-const unconfigured: StaffSnap = { configured: false, uid: "", email: "", role: "", status: "off" };
+const signedOut: StaffSnap = { configured: true, uid: "", email: "", role: "", note: "", status: "out" };
+const unconfigured: StaffSnap = { configured: false, uid: "", email: "", role: "", note: "", status: "off" };
+
+function deniedNote(uid: string, reason: "missing" | "blocked" | "timeout" | "unavailable") {
+  if (reason === "missing") {
+    return `Sign-in failed. Firestore has no staff/${uid} document. Add that document with role set to admin and name set to the staff name.`;
+  }
+  if (reason === "timeout") {
+    return "Sign-in failed. The staff record did not answer. In Firebase, open Firestore, then Rules, and click Publish. Then sign in again.";
+  }
+  return "Sign-in failed. Firestore rules are blocking this account. Open Firestore, then Rules, paste the site rules, and click Publish.";
+}
 let staffSnap: StaffSnap = signedOut;
 let linkAttempt: Promise<void> | null = null;
 
@@ -68,18 +79,15 @@ function subscribe(notify: () => void) {
       publish({ ...signedOut }, notify);
       return;
     }
-    const base = { configured: true, uid: user.uid, email: user.email ?? "", role: "" };
+    const base = { configured: true, uid: user.uid, email: user.email ?? "", role: "", note: "" };
     publish({ ...base, status: "pending" }, notify);
     void staffProfile(user.uid).then((profile) => {
       if (firebaseServices()?.auth.currentUser?.uid !== user.uid) return;
-      publish(
-        {
-          ...base,
-          role: profile?.role ?? "",
-          status: profile ? "staff" : "denied",
-        },
-        notify,
-      );
+      if (profile.ok) {
+        publish({ ...base, role: profile.role, status: "staff" }, notify);
+        return;
+      }
+      publish({ ...base, note: deniedNote(user.uid, profile.reason), status: "denied" }, notify);
     });
   });
 }

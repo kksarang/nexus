@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   limit,
   orderBy,
@@ -347,16 +348,33 @@ export async function redeemReward(customerId: string) {
   });
 }
 
-export async function staffProfile(uid: string) {
+export type StaffLookup =
+  | { ok: true; role: string; name: string }
+  | { ok: false; reason: "missing" | "blocked" | "timeout" | "unavailable" };
+
+export async function staffProfile(uid: string): Promise<StaffLookup> {
   const services = firebaseServices();
-  if (!services) return null;
-  try {
-    const snap = await getDoc(doc(services.db, "staff", uid));
-    if (!snap.exists()) return null;
-    return { role: String(snap.data().role ?? "staff"), name: String(snap.data().name ?? "") };
-  } catch {
-    return null;
-  }
+  if (!services) return { ok: false, reason: "unavailable" };
+  const read = async (): Promise<StaffLookup> => {
+    const user = services.auth.currentUser;
+    if (user) await user.getIdToken();
+    const snap = await getDocFromServer(doc(services.db, "staff", uid));
+    if (!snap.exists()) return { ok: false, reason: "missing" };
+    return { ok: true, role: String(snap.data().role ?? "staff"), name: String(snap.data().name ?? "") };
+  };
+  const reading = read()
+    .catch((reason: unknown) => {
+      const code = typeof reason === "object" && reason && "code" in reason ? String((reason as { code: string }).code) : "";
+      if (code === "not-found") return { ok: false, reason: "missing" } as const;
+      return { ok: false, reason: "blocked" } as const;
+    });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<StaffLookup>((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, reason: "timeout" }), 12000);
+  });
+  const result = await Promise.race([reading, timeout]);
+  if (timer) clearTimeout(timer);
+  return result;
 }
 
 export type PlayRecord = {
