@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { DoorOpen, Gamepad2, IndianRupee, Joystick, Menu, Phone, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +9,14 @@ import { BookButton } from "@/components/BookSlot";
 import { Logo } from "@/components/Logo";
 import { useStaff } from "@/components/StaffAccess";
 import { nav } from "@/lib/site";
+
+const menuMeta: Record<string, { hint: string; icon: LucideIcon }> = {
+  "/stations": { hint: "Six PS5 consoles", icon: Gamepad2 },
+  "/private-room": { hint: "A room for your crew", icon: DoorOpen },
+  "/games": { hint: "What you can play", icon: Joystick },
+  "/pricing": { hint: "Hourly rates", icon: IndianRupee },
+  "/contact": { hint: "Panoor, Kannur", icon: Phone },
+};
 
 function isCurrent(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -59,27 +67,29 @@ export function Header() {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#070910]/95 backdrop-blur-xl">
-        <div className="shell flex h-20 items-center gap-3">
+        <div className="shell flex h-20 items-center gap-4">
           <Logo priority className="h-14 w-auto shrink-0" />
-          <nav className="mx-auto hidden items-center gap-0.5 lg:flex" aria-label="Primary">
+          <nav className="mx-auto hidden items-center rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex" aria-label="Primary">
             {nav.map((item) => {
               const active = isCurrent(pathname, item.href);
+              const Icon = menuMeta[item.href]?.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-full px-3 py-2 text-[0.78rem] font-semibold tracking-wide whitespace-nowrap ${
-                    active ? "bg-cyan/15 text-cyan" : "text-mist hover:bg-white/5 hover:text-paper"
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold whitespace-nowrap ${
+                    active ? "bg-cyan text-ink" : "text-paper hover:bg-white/10"
                   }`}
                 >
+                  {Icon ? <Icon size={16} aria-hidden="true" /> : null}
                   {item.label}
                 </Link>
               );
             })}
           </nav>
-          <div className="ml-auto hidden items-center gap-3 lg:flex">
-            <Link href={adminHref} className="text-[0.68rem] tracking-[0.14em] text-mist uppercase hover:text-paper">
+          <div className="ml-auto hidden items-center gap-4 lg:flex">
+            <Link href={adminHref} className="text-xs text-mist hover:text-paper">
               Admin
             </Link>
             <BookButton className="min-h-10 px-4">Book Now</BookButton>
@@ -111,28 +121,38 @@ export function Header() {
             aria-modal="true"
             aria-label="Menu"
           >
-            <div className="shell grid gap-2 py-4">
-              <BookButton className="w-full">Book Now</BookButton>
-              <nav className="mt-2 grid gap-1" aria-label="Mobile">
-                {nav.map((item) => {
-                  const active = isCurrent(pathname, item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeMenus}
-                      aria-current={active ? "page" : undefined}
-                      className={`rounded-xl px-4 py-3 text-lg ${active ? "bg-cyan/15 text-cyan" : "text-paper hover:bg-white/5"}`}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-              <Link href={adminHref} onClick={closeMenus} className="mt-4 px-4 py-2 text-sm tracking-[0.14em] text-mist uppercase">
+            <nav className="shell grid gap-2 py-4" aria-label="Mobile">
+              {nav.map((item) => {
+                const active = isCurrent(pathname, item.href);
+                const meta = menuMeta[item.href];
+                const Icon = meta?.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMenus}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex items-center gap-4 rounded-2xl border px-4 py-4 ${
+                      active ? "border-cyan/50 bg-cyan/10" : "border-white/10 bg-white/[0.03]"
+                    }`}
+                  >
+                    {Icon ? (
+                      <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${active ? "bg-cyan text-ink" : "bg-white/5 text-cyan"}`}>
+                        <Icon size={20} aria-hidden="true" />
+                      </span>
+                    ) : null}
+                    <span>
+                      <span className="block text-lg text-paper">{item.label}</span>
+                      {meta ? <span className="mt-0.5 block text-sm text-mist">{meta.hint}</span> : null}
+                    </span>
+                  </Link>
+                );
+              })}
+              <BookButton className="mt-2 w-full">Book Now</BookButton>
+              <Link href={adminHref} onClick={closeMenus} className="px-1 py-2 text-sm text-mist">
                 Admin
               </Link>
-            </div>
+            </nav>
           </motion.div>
         ) : null}
       </AnimatePresence>
