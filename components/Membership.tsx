@@ -69,7 +69,7 @@ export function Membership({ heading = true }: { heading?: boolean }) {
             );
           })}
         </ul>
-        <p className="mt-5 text-sm text-mist">Pay and join at the counter. Changing a plan price does not change members who already joined.</p>
+        <p className="mt-5 text-sm text-mist">Pay and join at the counter.</p>
       </div>
     </section>
   );

@@ -11,7 +11,7 @@ export const site = {
     "https://www.google.com/maps/dir/?api=1&destination=Nexus+Playzone+Panoor+Kannur+Kerala",
   mapEmbed: "https://www.google.com/maps?q=Nexus+Playzone+Panoor+Kannur+Kerala&output=embed",
   description:
-    "Nexus Playzone is a PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six consoles, a private room, and the latest games for a proper game experience.",
+    "Nexus Playzone is a PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six gaming stations, including a private room, and the latest games for a proper game experience.",
 } as const;
 
 // Paste the Google Play listing link here. Until then the site says the app is coming soon.

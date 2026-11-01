@@ -8,11 +8,10 @@ import { useEffect, useRef, useState } from "react";
 import { BookButton } from "@/components/BookSlot";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ScrollXp } from "@/components/ScrollXp";
-import { useStaff } from "@/components/StaffAccess";
 import { nav } from "@/lib/site";
 
 const menuMeta: Record<string, { hint: string; icon: LucideIcon }> = {
-  "/stations": { hint: "Six PS5 consoles", icon: Gamepad2 },
+  "/stations": { hint: "Six gaming stations", icon: Gamepad2 },
   "/private-room": { hint: "A room for your crew", icon: DoorOpen },
   "/games": { hint: "What you can play", icon: Joystick },
   "/pricing": { hint: "Hourly rates", icon: IndianRupee },
@@ -27,12 +26,10 @@ function isCurrent(pathname: string, href: string) {
 
 export function Header() {
   const pathname = usePathname();
-  const staff = useStaff();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const open = openPath === pathname;
-  const adminHref = staff.status === "staff" ? "/admin" : "/admin/login";
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1280px)");
@@ -107,9 +104,6 @@ export function Header() {
             })}
           </nav>
           <div className="ml-auto hidden items-center gap-4 xl:flex">
-            <Link href={adminHref} className="text-xs text-mist hover:text-paper">
-              Admin
-            </Link>
             <BookButton className="btn-sm">Book Now</BookButton>
           </div>
           <button
@@ -168,9 +162,6 @@ export function Header() {
                 );
               })}
               <BookButton className="mt-2 w-full">Book Now</BookButton>
-              <Link href={adminHref} onClick={closeMenus} className="px-1 py-2 text-sm text-mist">
-                Admin
-              </Link>
             </nav>
           </motion.div>
         ) : null}

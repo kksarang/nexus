@@ -3,10 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 const doors = [
-  { href: "/stations", kicker: "Stations 01 to 05", title: "The main floor", body: "Four PS5 stations and the car simulator, with live availability.", image: "/images/hero-lounge.jpg", className: "lg:col-span-2 lg:row-span-2", large: true },
-  { href: "/private-room", kicker: "Station 06", title: "Private room", body: "Your own room, screen, and PS5.", image: "/images/private-room.jpg", className: "lg:col-span-2" },
-  { href: "/games", kicker: "Library", title: "Games", body: "See what is ready to play.", image: "/images/controller-glow.jpg", className: "" },
-  { href: "/pricing", kicker: "Rates", title: "Pricing", body: "Work out your session cost.", image: "/images/crew-session.jpg", className: "" },
+  { href: "/stations", kicker: "Stations 01 to 05", title: "The main floor", body: "Four PS5 stations and the car simulator, with live availability.", image: "/images/hero-lounge.jpg", alt: "A PS5 and wide screen in the gaming lounge", className: "lg:col-span-2 lg:row-span-2", large: true },
+  { href: "/private-room", kicker: "Station 06", title: "Private room", body: "Your own room, screen, and PS5.", image: "/images/private-room.jpg", alt: "The private gaming room with two chairs and a large screen", className: "lg:col-span-2" },
+  { href: "/games", kicker: "Library", title: "Games", body: "See what is ready to play.", image: "/images/controller-glow.jpg", alt: "A PS5 controller in neon light", className: "" },
+  { href: "/pricing", kicker: "Rates", title: "Pricing", body: "Work out your session cost.", image: "/images/crew-session.jpg", alt: "Two friends playing in front of a wide screen", className: "" },
 ];
 
 export function HomeDoors() {
@@ -22,7 +22,7 @@ export function HomeDoors() {
             <Link key={door.href} href={door.href} className={`door group bevel relative block min-h-[17rem] overflow-hidden border border-white/10 ${door.className}`}>
               <Image
                 src={door.image}
-                alt=""
+                alt={door.alt}
                 fill
                 sizes={door.large ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 25vw, 100vw"}
                 className="object-cover transition duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"

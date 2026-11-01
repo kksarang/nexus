@@ -19,7 +19,7 @@ export default function MembershipPage() {
             Play more. <span className="text-gradient">Pay less.</span>
           </>
         }
-        image="/images/crew-session.jpg"
+        image="/images/ps5-console.jpg"
       >
         Monthly, quarterly, or yearly plans for regulars on Stations 01 to 04. Pay and join at the counter.
       </PageHero>

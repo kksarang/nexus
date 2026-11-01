@@ -15,7 +15,7 @@ export function PageHero({
   actions?: ReactNode;
 }) {
   return (
-    <section className="relative isolate overflow-hidden pt-32 pb-16 sm:pt-36 lg:pb-24">
+    <section className="relative isolate overflow-hidden pt-28 pb-12 sm:pt-36 lg:pb-24">
       <Image src="/brand/nebula.jpg" alt="" fill preload sizes="100vw" className="-z-20 object-cover" />
       <div className="absolute inset-0 -z-10 bg-ink/70" />
       <div className="shell grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
@@ -31,8 +31,8 @@ export function PageHero({
           ) : null}
           {actions ? <div className="boot mt-8 flex flex-col gap-3 sm:flex-row" style={{ "--boot": 3 } as CSSProperties}>{actions}</div> : null}
         </div>
-        <div className="hero-frame boot bevel relative aspect-[16/10] overflow-hidden border border-magenta/50" style={{ "--boot": 2 } as CSSProperties}>
-          <Image src={image} alt="" fill preload sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
+        <div className="hero-frame boot bevel relative hidden aspect-[16/10] overflow-hidden lg:block border border-magenta/50" style={{ "--boot": 2 } as CSSProperties}>
+          <Image src={image} alt={`${eyebrow} at Nexus Playzone, Panoor`} fill sizes="40vw" className="object-cover" />
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />

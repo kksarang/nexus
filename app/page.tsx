@@ -10,7 +10,7 @@ import { HomeStats } from "@/components/PriceCopy";
 
 export const metadata: Metadata = {
   description:
-    "PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six consoles, a private room, and WhatsApp booking at Nexus Playzone.",
+    "PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six gaming stations including a private room, with WhatsApp booking at Nexus Playzone.",
   alternates: { canonical: "/" },
 };
 

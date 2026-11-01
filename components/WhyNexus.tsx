@@ -1,7 +1,7 @@
 import { SectionIntro } from "@/components/SectionIntro";
 
 const points = [
-  { title: "Six PS5 consoles", body: "Stations 01 to 04 on the main floor, a car simulator at station 05, and the private room at station 06." },
+  { title: "Six gaming stations", body: "Stations 01 to 04 on the main floor, a car simulator at station 05, and the private room at station 06." },
   { title: "A room of your own", body: "Station 06 is a dedicated private gaming room with its own PS5. The session is just for your crew." },
   { title: "Play with your people", body: "Bring friends, a couple, or a small group. Book the station, then we confirm the slot on WhatsApp." },
 ];
@@ -18,7 +18,7 @@ export function WhyNexus() {
             </>
           }
         >
-          Nexus Playzone is the PS5 game station in Panoor, Kannur. Players from Thalassery come for football, wrestling, open-world, and racing on the latest games, on the main floor or in the private room.
+          Nexus Playzone is the PS5 gaming cafe in Panoor, Kannur. Players from Thalassery come for football, wrestling, open-world, and racing on the latest games, on the main floor or in the private room.
         </SectionIntro>
         <ol className="border-l border-magenta/40">
           {points.map((point, index) => (

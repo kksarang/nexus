@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Condensed, Chakra_Petch, Inter, Orbitron } from "next/font/google";
+import { Barlow_Condensed, Chakra_Petch, Inter, Michroma, Orbitron } from "next/font/google";
 import { JsonLd } from "@/components/JsonLd";
 import { Providers } from "@/components/Providers";
 import { SiteFrame } from "@/components/SiteFrame";
@@ -33,6 +33,13 @@ const chakra = Chakra_Petch({
   display: "swap",
 });
 
+const michroma = Michroma({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-michroma",
+  display: "swap",
+});
+
 const title = "Nexus Playzone | PS5 Gaming Station in Panoor, Thalassery and Kannur";
 
 export const metadata: Metadata = {
@@ -49,6 +56,9 @@ export const metadata: Metadata = {
     "gaming station in Thalassery",
     "PS5 gaming in Thalassery",
     "game station in Kannur",
+    "gaming cafe in Panoor",
+    "PS5 cafe in Thalassery",
+    "PS5 gaming in Kannur",
     "Panoor gaming",
     "private gaming room in Panoor",
   ],
@@ -87,7 +97,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${orbitron.variable} ${barlow.variable} ${chakra.variable} h-full antialiased`}
+      className={`${inter.variable} ${orbitron.variable} ${barlow.variable} ${chakra.variable} ${michroma.variable} h-full antialiased`}
     >
       <body className="stage min-h-full font-sans text-paper antialiased">
         <Providers>

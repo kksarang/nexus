@@ -96,7 +96,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
               <BadgePercent size={18} aria-hidden="true" />
             </span>
             <div>
-              <h3 className="text-2xl text-paper uppercase">Special offers</h3>
+              <h2 className="text-2xl text-paper uppercase">Special offers</h2>
               {offers.length ? (
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                   {offers.map((offer) => (

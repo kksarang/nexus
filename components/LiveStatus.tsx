@@ -72,10 +72,17 @@ const toneStyle: Record<StatusView["tone"], { dot: string; text: string; ring: s
   unknown: { dot: "bg-white/40", text: "text-mist", ring: "border-white/15 bg-white/5" },
 };
 
+const STALE_AFTER = 12 * 60 * 60 * 1000;
+
 function viewFor(live: ReturnType<typeof useLiveStations>, id: string): StatusView {
   if (!live.ready || !live.now) return { tone: "unknown", label: "Checking…", detail: "Loading live status." };
   if (live.failed && !live.map[id]) return { tone: "unknown", label: "Ask us", detail: "Live status could not load. Call or WhatsApp to check." };
-  return describeStatus(live.map[id], live.now);
+  const view = describeStatus(live.map[id], live.now);
+  // "Available now" is only a promise if the desk touched it recently.
+  if (view.tone === "free" && live.now - (live.map[id]?.updatedAt ?? 0) > STALE_AFTER) {
+    return { tone: "unknown", label: "Ask us", detail: "Call or WhatsApp us to check if it is free." };
+  }
+  return view;
 }
 
 function AskActions({ name }: { name: string }) {
@@ -204,7 +211,7 @@ export function LiveBoard() {
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-paper/80">{view.detail}</p>
-                  {ago ? <p className="mt-1 text-[11px] text-mist">{ago}</p> : null}
+                  {ago && view.tone !== "unknown" ? <p className="mt-1 text-[11px] text-mist">{ago}</p> : null}
                   {live.ready && live.now && askTones.includes(view.tone) ? <AskActions name={station.name} /> : null}
                 </li>
               );

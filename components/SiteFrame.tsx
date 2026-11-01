@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { Analytics } from "@/components/Analytics";
 import { BackToTop } from "@/components/BackToTop";
 import { FinalCta } from "@/components/FinalCta";
 import { Footer } from "@/components/Footer";
@@ -32,6 +33,7 @@ function Chrome({ children }: { children: ReactNode }) {
       <MobileBar />
       <BackToTop />
       <SiteNotice />
+      <Analytics />
     </div>
   );
 }
