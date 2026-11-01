@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppPromo } from "@/components/AppPromo";
 import { Hero } from "@/components/Hero";
 import { HomeDoors } from "@/components/HomeDoors";
 import { HomeGlance } from "@/components/HomeGlance";
@@ -22,6 +23,7 @@ export default function HomePage() {
       <Membership />
       <HomeGames />
       <HomeGlance />
+      <AppPromo />
       <HomeSteps />
     </main>
   );

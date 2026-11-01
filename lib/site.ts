@@ -14,6 +14,9 @@ export const site = {
     "Nexus Playzone is a PS5 gaming station in Panoor, Kannur, for Thalassery and nearby. Six consoles, a private room, and the latest games for a proper game experience.",
 } as const;
 
+// Paste the Google Play listing link here. Until then the site says the app is coming soon.
+export const playStoreUrl: string = "";
+
 export function getSiteUrl() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (configured) return configured;
@@ -113,10 +116,20 @@ export const nav = [
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export const footerLinks = [
-  { href: "/", label: "Home" },
+export const footerExplore = [
+  { href: "/stations", label: "Stations" },
+  { href: "/private-room", label: "Private Room" },
+  { href: "/games", label: "Games" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/membership", label: "Membership" },
+] as const;
+
+export const footerNexus = [
+  { href: "/book", label: "Book a session" },
   { href: "/player", label: "Rewards" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export const highlights = [

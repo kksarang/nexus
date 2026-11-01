@@ -23,7 +23,7 @@ export function Hero() {
         />
         <div className="flare flare-live mt-5 w-[min(92vw,820px)]" />
         <p className="boot mt-5 text-xs font-semibold tracking-[0.22em] text-paper uppercase" style={{ "--boot": 1 } as CSSProperties}>{site.location}</p>
-        <h1 className="boot mt-3 text-[clamp(2.1rem,5vw,3.75rem)] text-paper uppercase" style={{ "--boot": 2 } as CSSProperties}>Level up your game.</h1>
+        <h1 className="boot mt-3 text-[clamp(2.1rem,5vw,3.75rem)] text-paper uppercase" style={{ "--boot": 2 } as CSSProperties}>{site.tagline}</h1>
         <p className="boot mt-3 max-w-xl text-base leading-relaxed text-paper/85" style={{ "--boot": 3 } as CSSProperties}>
           A PS5 gaming station in Panoor for Thalassery and Kannur. Six consoles, a private room, and a real game experience with your people.
         </p>
