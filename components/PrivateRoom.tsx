@@ -27,7 +27,8 @@ export function PrivateRoom({ standalone = false }: { standalone?: boolean }) {
           sizes="100vw"
           className="-z-10 object-cover object-[35%_center]"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/10" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink/90 via-ink/50 to-transparent" />
         <div className="shell pt-28 pb-12">
           <p className="eyebrow">Station 06 · Private gaming room</p>
           {standalone ? (

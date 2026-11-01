@@ -293,9 +293,6 @@ export const gallery = [
   { src: "/images/private-room.jpg", alt: "The private gaming room", tag: "Private room" },
   { src: "/images/crew-session.jpg", alt: "Friends playing in front of a wide screen", tag: "Gaming moments", wide: true },
   { src: "/images/controller-glow.jpg", alt: "A controller in neon light", tag: "Setup" },
-  { src: "/images/founders/vishnu.jpg", alt: "Vishnu, co-founder of Nexus Playzone", tag: "Vishnu" },
-  { src: "/images/founders/sarang.jpg", alt: "Sarang, co-founder of Nexus Playzone", tag: "Sarang" },
-  { src: "/images/founders/adarsh.jpg", alt: "Adarsh, co-founder of Nexus Playzone", tag: "Adarsh" },
 ] as const;
 
 export const founders = [

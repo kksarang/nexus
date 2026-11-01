@@ -24,7 +24,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
   const mode = modes.find((item) => item.key === modeKey) ?? modes[0];
 
   return (
-    <section id="pricing" className="py-20 sm:py-28">
+    <section id="pricing" className="py-16 sm:py-20">
       <div className="shell">
         {heading ? (
           <SectionIntro

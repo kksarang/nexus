@@ -47,7 +47,7 @@ export function Gallery({ heading = true }: { heading?: boolean }) {
               </Link>
             }
           >
-            The consoles, the screens, the seats, and the three founders.
+            The consoles, the screens, the seats, and the private room.
           </SectionIntro>
         ) : null}
 

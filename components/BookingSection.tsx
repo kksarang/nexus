@@ -14,7 +14,7 @@ export function BookingSection({ heading = true }: { heading?: boolean }) {
     <section id="book" className="relative isolate py-20 sm:py-28">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(139,61,255,0.16),transparent_70%)]" />
       <div className="shell grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
-        <div>
+        <div className="lg:sticky lg:top-28 lg:self-start">
           {heading ? (
             <SectionIntro
               eyebrow="Book your session"

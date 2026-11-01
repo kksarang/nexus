@@ -1242,8 +1242,11 @@ html:has(.admin-light) {
   scrollbar-width: none;
 }
 
-.site-skin .btn-primary {
+.site-skin .btn-primary:not(.absolute) {
   position: relative;
+}
+
+.site-skin .btn-primary {
   overflow: hidden;
 }
 

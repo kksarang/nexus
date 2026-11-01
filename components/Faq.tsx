@@ -17,12 +17,14 @@ export function Faq() {
   ];
   return (
     <section className="pb-20 sm:pb-28">
-      <div className="shell max-w-3xl">
-        <p className="eyebrow">Questions</p>
-        <h2 className="mt-5 text-[2.2rem] text-paper uppercase sm:text-5xl">
-          Good to <span className="text-gradient">know.</span>
-        </h2>
-        <div className="mt-8 grid gap-2.5">
+      <div className="shell grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:gap-14">
+        <div>
+          <p className="eyebrow">Questions</p>
+          <h2 className="mt-5 text-[2.2rem] text-paper uppercase sm:text-5xl">
+            Good to <span className="text-gradient">know.</span>
+          </h2>
+        </div>
+        <div className="grid content-start gap-2.5">
           {items.map(([question, answer]) => (
             <details key={question} className="faq-item tile p-4 sm:px-5">
               <summary className="font-display text-lg text-paper">{question}</summary>
