@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { BackToTop } from "@/components/BackToTop";
+import { FinalCta } from "@/components/FinalCta";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MobileBar } from "@/components/MobileBar";
@@ -21,15 +22,16 @@ function Chrome({ children }: { children: ReactNode }) {
   if (pathname.startsWith("/admin")) return <>{children}</>;
 
   return (
-    <>
+    <div className="site-skin">
       <Suspense fallback={<div className="h-20" />}>
         <Header />
       </Suspense>
       <div className="flex-1">{children}</div>
+      {pathname === "/book" ? null : <FinalCta />}
       <Footer />
       <MobileBar />
       <BackToTop />
       <SiteNotice />
-    </>
+    </div>
   );
 }

@@ -1,31 +1,39 @@
 import Link from "next/link";
+import { LoyaltySim } from "@/components/LoyaltySim";
+import { SectionIntro } from "@/components/SectionIntro";
 import { POINT_MINUTES, REWARD_MINUTES, WEEKLY_TARGET } from "@/lib/loyalty";
 
 export function LoyaltyHome() {
   return (
     <section className="py-20 sm:py-28">
-      <div className="shell grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-end">
-        <div>
-          <p className="text-[0.72rem] font-semibold tracking-[0.22em] text-cyan uppercase">Loyalty rewards</p>
-          <h2 className="mt-3 text-4xl tracking-wide text-paper uppercase sm:text-5xl">Come back. The hours add up.</h2>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-mist sm:text-base">
-            Paid play earns points at the counter. The card is shown there. This website does not open anyone’s points from a phone number.
-          </p>
+      <div className="shell">
+        <SectionIntro
+          eyebrow="Loyalty XP"
+          title={
+            <>
+              Come back. <span className="text-gradient">The hours add up.</span>
+            </>
+          }
+        >
+          Paid play earns points at the counter. The card is shown there. This website does not open anyone’s points from a phone number.
+        </SectionIntro>
+        <div className="mt-10">
+          <LoyaltySim />
         </div>
-        <ul className="grid gap-3 sm:grid-cols-3">
+        <ul className="mt-6 grid gap-5 sm:grid-cols-3">
           {[
             [`1 point`, `Every ${POINT_MINUTES} paid minutes. Leftover minutes carry forward.`],
             [`${WEEKLY_TARGET} points`, "Earned Monday 00:00 to Sunday 23:59, India time."],
             [`${REWARD_MINUTES} min`, "One free session that week. Those minutes do not earn points. Lifetime points stay on the card."],
           ].map(([title, body]) => (
-            <li key={title} className="border border-white/10 bg-[#101624] p-4">
+            <li key={title}>
               <p className="font-tech text-xl text-paper">{title}</p>
               <p className="mt-2 text-sm leading-relaxed text-mist">{body}</p>
             </li>
           ))}
         </ul>
-        <Link href="/player" className="text-sm text-cyan hover:text-paper lg:col-span-2">
-          How the player card works
+        <Link href="/player" className="mt-5 inline-block text-sm text-cyan hover:text-paper">
+          How the player card works →
         </Link>
       </div>
     </section>

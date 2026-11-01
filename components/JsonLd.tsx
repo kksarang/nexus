@@ -10,6 +10,7 @@ export function JsonLd() {
     description: site.description,
     url,
     image: `${url}/images/hero-lounge.jpg`,
+    logo: `${url}/brand/nexus-wordmark.png`,
     telephone: "+91-99952-54290",
     email: site.email,
     address: {

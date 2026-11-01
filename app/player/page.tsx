@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LoyaltySim } from "@/components/LoyaltySim";
 
 export const metadata: Metadata = {
   title: "Player card",
@@ -11,21 +12,24 @@ export default function PlayerPage() {
     <main id="content">
       <section className="pt-28 pb-20 sm:pt-32 sm:pb-24">
         <div className="shell">
-          <p className="font-tech text-[0.65rem] tracking-[0.28em] text-violet uppercase">Loyalty</p>
-          <h1 className="mt-3 max-w-3xl text-5xl leading-none tracking-wide text-paper uppercase sm:text-7xl">
+          <p className="eyebrow">Loyalty</p>
+          <h1 className="mt-5 max-w-3xl text-[2.5rem] text-paper uppercase sm:text-6xl">
             Your player card
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-relaxed text-mist">
             One paid hour earns 1 point. Ten points from Monday to Sunday unlocks 30 minutes of free play. Ask the
             counter to look up your mobile number and show the card.
           </p>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          <div className="mt-8">
+            <LoyaltySim />
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
             {[
               ["1 point", "Every 60 paid minutes. Shorter sessions add up."],
               ["10 points", "In one Monday–Sunday week, India time."],
               ["30 minutes", "One free session, marked used at the counter."],
             ].map(([title, body]) => (
-              <article key={title} className="border border-white/10 bg-navy p-5">
+              <article key={title} className="panel p-5">
                 <h2 className="font-tech text-2xl text-paper">{title}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-mist">{body}</p>
               </article>

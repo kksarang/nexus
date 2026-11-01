@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   --color-ink: #050610;
   --color-navy: #0b1020;
   --color-cyan: #16dcff;
@@ -9,6 +9,9 @@
   --color-magenta: #ec39ff;
   --color-mist: #a7b0c3;
   --color-paper: #f4f7fb;
+}
+
+@theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-barlow), ui-sans-serif, sans-serif;
   --font-tech: var(--font-orbitron), ui-sans-serif, sans-serif;
@@ -840,4 +843,424 @@ html:has(.admin-light) {
     border-right: 0;
     border-bottom: 1px solid #e2e8f0;
   }
+}
+
+/* Customer site: Nexus Playzone brand skin. Staff screens never sit inside .site-skin. */
+.site-skin {
+  --color-ink: #05030c;
+  --color-navy: #0e0a20;
+  /* The logo has no cyan, so the shared "cyan" accent becomes the brand's light violet here. */
+  --color-cyan: #bd93ff;
+  --color-blue: #4a4dff;
+  --color-violet: #8b3dff;
+  --color-magenta: #ee4bff;
+  --color-mist: #b6b0cc;
+  --color-paper: #f7f5fd;
+  --bevel: 0.9rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  background: #05030c;
+}
+
+.site-skin::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  opacity: 0.3;
+  background: url("/brand/nebula.jpg") center / cover no-repeat;
+}
+
+.site-skin ::selection {
+  background: rgba(224, 3, 252, 0.4);
+}
+
+.site-skin :focus-visible {
+  outline-color: #ee4bff;
+}
+
+.site-skin h1,
+.site-skin h2,
+.site-skin h3,
+.site-skin .font-display {
+  font-family: var(--font-chakra), sans-serif;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.site-skin .text-gradient {
+  background-image: linear-gradient(95deg, #ee4bff 0%, #a23dff 55%, #5a5cff 100%);
+}
+
+/* Chamfered corners echo the cut letters in the logo. Browsers without corner-shape show soft corners. */
+.site-skin .panel,
+.site-skin .btn,
+.site-skin .tile,
+.site-skin .tab,
+.site-skin .desk-input,
+.site-skin .icon-well,
+.site-skin .bevel {
+  border-radius: var(--bevel);
+  corner-shape: bevel;
+}
+
+.site-skin .btn {
+  --bevel: 0.6rem;
+  font-family: var(--font-chakra), sans-serif;
+  font-size: 0.86rem;
+}
+
+.site-skin .btn-sm {
+  min-height: 2.6rem;
+  padding: 0.6rem 1.1rem;
+}
+
+.site-skin .btn-primary {
+  background: linear-gradient(100deg, #c81ee6, #7a2bff);
+  color: #ffffff;
+  box-shadow: 0 8px 30px rgba(200, 30, 230, 0.35);
+}
+
+.site-skin .btn-primary:hover {
+  box-shadow: 0 12px 42px rgba(224, 3, 252, 0.55);
+}
+
+.site-skin .btn-secondary {
+  border-color: rgba(189, 147, 255, 0.35);
+  background: rgba(189, 147, 255, 0.06);
+}
+
+.site-skin .btn-secondary:hover {
+  border-color: #ee4bff;
+  background: rgba(224, 3, 252, 0.12);
+}
+
+.site-skin .eyebrow {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-chakra), sans-serif;
+  font-size: 0.8rem;
+  color: #bd93ff;
+}
+
+.site-skin .eyebrow::before {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 0;
+  box-shadow: none;
+  background: #ee4bff;
+  clip-path: polygon(0 0, 28% 0, 50% 32%, 72% 0, 100% 0, 66% 50%, 100% 100%, 72% 100%, 50% 68%, 28% 100%, 0 100%, 34% 50%);
+}
+
+.site-skin .panel,
+.site-skin .tile {
+  border: 1px solid rgba(189, 147, 255, 0.16);
+  background: linear-gradient(160deg, rgba(139, 61, 255, 0.1), rgba(14, 10, 32, 0) 55%), #0e0a20;
+}
+
+.site-skin .panel-hover:hover,
+.site-skin .tile-link:hover {
+  border-color: rgba(238, 75, 255, 0.65);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5), 0 0 34px rgba(200, 30, 230, 0.22);
+}
+
+.site-skin .panel-featured {
+  border-color: rgba(238, 75, 255, 0.6);
+  background: linear-gradient(160deg, rgba(224, 3, 252, 0.18), rgba(14, 10, 32, 0) 60%), #0e0a20;
+  box-shadow: 0 0 44px rgba(200, 30, 230, 0.16);
+}
+
+.site-skin .tile-link {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.site-skin .tile-link:hover {
+  transform: translateY(-3px);
+}
+
+.site-skin .chip {
+  border-color: rgba(189, 147, 255, 0.3);
+  background: rgba(5, 3, 12, 0.65);
+}
+
+.site-skin .chip-button[aria-pressed="true"] {
+  border-color: #ee4bff;
+  background: rgba(224, 3, 252, 0.2);
+}
+
+.site-skin .icon-well {
+  --bevel: 0.6rem;
+  border-color: rgba(238, 75, 255, 0.35);
+  background: rgba(224, 3, 252, 0.1);
+  color: #ee4bff;
+}
+
+.site-skin .field-label {
+  color: #b6b0cc;
+}
+
+.site-skin .desk-input {
+  --bevel: 0.6rem;
+  border-color: rgba(189, 147, 255, 0.2);
+}
+
+.site-skin .desk-input:focus {
+  border-color: #ee4bff;
+  box-shadow: 0 0 0 3px rgba(238, 75, 255, 0.16);
+}
+
+.site-skin select.desk-input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #ee4bff 50%),
+    linear-gradient(135deg, #ee4bff 50%, transparent 50%);
+}
+
+.site-skin .tab {
+  --bevel: 0.6rem;
+  font-family: var(--font-chakra), sans-serif;
+}
+
+.site-skin .tab[aria-selected="true"] {
+  background: linear-gradient(100deg, #c81ee6, #7a2bff);
+  color: #ffffff;
+}
+
+/* The light line under the logo, used as the divider between sections. */
+.flare {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7a2bff 25%, #ee4bff 45%, #ffffff 50%, #ee4bff 55%, #7a2bff 75%, transparent);
+  box-shadow: 0 0 18px rgba(224, 3, 252, 0.7);
+}
+
+.title-screen::after {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: 12rem;
+  content: "";
+  background: linear-gradient(transparent, #05030c);
+}
+
+.grid-floor {
+  position: absolute;
+  inset: auto -30% 0;
+  z-index: -1;
+  height: 45%;
+  transform: perspective(420px) rotateX(62deg);
+  transform-origin: bottom;
+  background-image:
+    linear-gradient(rgba(238, 75, 255, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(238, 75, 255, 0.5) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to top, #000, transparent);
+  pointer-events: none;
+}
+
+.ghost-word {
+  position: absolute;
+  inset: -2.2rem 0 auto;
+  overflow: hidden;
+  font-family: var(--font-chakra), sans-serif;
+  font-size: clamp(3.6rem, 12vw, 9.5rem);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(189, 147, 255, 0.14);
+  pointer-events: none;
+}
+
+.ticker {
+  overflow: hidden;
+  border-block: 1px solid rgba(238, 75, 255, 0.35);
+  background: rgba(14, 10, 32, 0.8);
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+}
+
+.ticker-word {
+  padding: 0.8rem 1.4rem;
+  font-family: var(--font-chakra), sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f7f5fd;
+}
+
+.ticker-word:nth-child(even) {
+  color: #ee4bff;
+}
+
+.scroll-xp {
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  transform-origin: left;
+  background: linear-gradient(90deg, #7a2bff, #ee4bff);
+  box-shadow: 0 0 10px rgba(238, 75, 255, 0.8);
+}
+
+.roster {
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.site-skin .roster:hover {
+  border-color: rgba(238, 75, 255, 0.6);
+}
+
+.site-skin .roster.is-active {
+  border-color: #ee4bff;
+  background: linear-gradient(100deg, rgba(224, 3, 252, 0.28), rgba(122, 43, 255, 0.12)), #0e0a20;
+  box-shadow: 0 0 28px rgba(224, 3, 252, 0.3);
+}
+
+.game-row {
+  scrollbar-width: none;
+}
+
+.game-thumb {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.game-thumb.is-active {
+  transform: translateY(-4px);
+}
+
+.hero-frame {
+  box-shadow: 0 0 60px rgba(224, 3, 252, 0.35);
+}
+
+.player-card {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.player-card:hover {
+  transform: perspective(900px) rotateY(-5deg) rotateX(3deg) translateY(-6px);
+  box-shadow: 0 0 44px rgba(224, 3, 252, 0.4);
+}
+
+.meter {
+  height: 0.45rem;
+  transform: skewX(-18deg);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7a2bff, #ee4bff);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flare-live {
+    animation: flare-breathe 3.4s ease-in-out infinite;
+  }
+
+  .press-start {
+    animation: press-start 2s ease-in-out infinite;
+  }
+
+  .grid-floor {
+    animation: floor-run 2.4s linear infinite;
+  }
+
+  .ticker-track {
+    animation: ticker-run 45s linear infinite;
+  }
+
+  .boot {
+    animation: boot-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--boot, 0) * 110ms + 150ms);
+  }
+
+  .boot-logo {
+    animation: logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster,
+  .game-thumb,
+  .player-card,
+  .player-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+@keyframes flare-breathe {
+  50% {
+    opacity: 0.55;
+    transform: scaleX(0.82);
+  }
+}
+
+@keyframes press-start {
+  50% {
+    box-shadow: 0 8px 46px rgba(238, 75, 255, 0.8);
+  }
+}
+
+@keyframes floor-run {
+  to {
+    background-position: 0 64px;
+  }
+}
+
+@keyframes ticker-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes boot-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes logo-in {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: scale(1.08);
+  }
+}
+
+.xp-cell {
+  height: 1.1rem;
+  transform: skewX(-18deg);
+  background: linear-gradient(180deg, #ee4bff, #7a2bff);
+  box-shadow: 0 0 12px rgba(224, 3, 252, 0.45);
+}
+
+.xp-cell {
+  transition: opacity 0.2s ease;
+}
+
+.xp-cell.is-empty {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }

@@ -1,19 +1,23 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { Gamepad2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
 import { SectionIntro } from "@/components/SectionIntro";
 import { gameGenres, games, messages } from "@/lib/site";
 
 export function Games({ heading = true }: { heading?: boolean }) {
   const [genre, setGenre] = useState<(typeof gameGenres)[number]>("All");
-  const list = genre === "All" ? games : games.filter((game) => game.genre === genre);
+  const [activeTitle, setActiveTitle] = useState<string>(games[0].title);
+  const list = genre === "All" ? [...games] : games.filter((game) => game.genre === genre);
+  const active = list.find((game) => game.title === activeTitle) ?? list[0];
 
   return (
-    <section id="games" className="border-y border-white/10 bg-navy/50 py-20 sm:py-28">
+    <section id="games" className="py-20 sm:py-28">
       <div className="shell">
         {heading ? (
           <SectionIntro
@@ -36,71 +40,67 @@ export function Games({ heading = true }: { heading?: boolean }) {
 
         <div className={`${heading ? "mt-10" : ""} flex flex-wrap gap-2`} role="group" aria-label="Filter by genre">
           {gameGenres.map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={genre === item}
-              onClick={() => setGenre(item)}
-              className="chip chip-button px-4 py-2 text-xs"
-            >
+            <button key={item} type="button" aria-pressed={genre === item} onClick={() => setGenre(item)} className="chip chip-button px-4 py-2 text-xs">
               {item}
             </button>
           ))}
         </div>
 
-        <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((game) => (
-            <li key={game.title}>
-              <article
-                className="group relative aspect-[3/4] overflow-hidden rounded-[1.4rem]"
-                style={{ boxShadow: `inset 0 0 0 4px ${game.accent}` }}
-              >
-                <Image
-                  src={game.image}
-                  alt={game.alt}
-                  fill
-                  sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-                  className="object-cover transition duration-500 group-hover:scale-[1.04]"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(180deg, ${game.accent}88 0%, transparent 34%, #050610 78%)`,
-                  }}
-                />
-                <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-                  <span
-                    className="inline-flex rounded-full px-3 py-1 text-[0.68rem] font-bold tracking-[0.14em] uppercase"
-                    style={{ background: game.accent, color: "#050610" }}
-                  >
-                    {game.genre}
-                  </span>
-                  <h3 className="mt-3 text-3xl leading-none tracking-wide text-paper uppercase sm:text-4xl">
-                    {game.title}
-                  </h3>
-                  <p className="mt-3 flex items-center gap-2 text-sm text-paper">
-                    <Gamepad2 size={15} aria-hidden="true" style={{ color: game.accent }} />
-                    {game.modes}
-                  </p>
-                </div>
-              </article>
-            </li>
-          ))}
-          <li>
-            <article className="flex aspect-[3/4] flex-col justify-between rounded-[1.4rem] border border-dashed border-cyan/30 bg-ink/40 p-6">
-              <span className="chip w-fit border-cyan/40 text-cyan">More titles</span>
-              <div>
-                <h3 className="text-3xl leading-none tracking-wide text-paper uppercase">And plenty more</h3>
-                <p className="mt-3 text-sm leading-relaxed text-mist">
-                  Ask for the full, current list before you come in.
-                </p>
-                <WhatsAppButton message={messages.games} className="mt-5 min-h-10 max-w-full px-4 whitespace-normal">
-                  Ask for the list
-                </WhatsAppButton>
-              </div>
-            </article>
-          </li>
-        </ul>
+        <div className="panel relative mt-6 min-h-[34rem] overflow-hidden sm:min-h-[38rem]">
+          <AnimatePresence mode="sync" initial={false}>
+            <motion.div
+              key={active.title}
+              className="absolute inset-0"
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Image src={active.image} alt={active.alt} fill sizes="(min-width: 1280px) 1240px, 100vw" className="object-cover" />
+            </motion.div>
+          </AnimatePresence>
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink/80 to-transparent" />
+
+          <div className="absolute inset-x-0 bottom-0 p-4 sm:p-8">
+            <span className="inline-flex rounded-sm px-2 py-0.5 text-xs font-bold tracking-[0.12em] uppercase" style={{ background: active.accent, color: "#05030c" }}>
+              {active.genre}
+            </span>
+            <h3 className="mt-3 max-w-2xl text-4xl text-paper uppercase sm:text-6xl">{active.title}</h3>
+            <p className="mt-2 flex items-center gap-2 text-sm text-paper">
+              <Gamepad2 size={16} aria-hidden="true" style={{ color: active.accent }} />
+              {active.modes}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <BookButton className="btn-sm">Book to play</BookButton>
+              <WhatsAppButton message={messages.games} className="btn-sm">
+                Ask for the full list
+              </WhatsAppButton>
+            </div>
+
+            <ul className="game-row mt-6 flex snap-x gap-2 overflow-x-auto p-1 sm:gap-3">
+              {list.map((game) => {
+                const selected = game.title === active.title;
+                return (
+                  <li key={game.title} className="shrink-0 snap-start">
+                    <button
+                      type="button"
+                      data-game
+                      aria-pressed={selected}
+                      aria-label={game.title}
+                      onClick={() => setActiveTitle(game.title)}
+                      onMouseEnter={() => setActiveTitle(game.title)}
+                      className={`game-thumb bevel relative block h-24 w-24 overflow-hidden border-2 sm:h-28 sm:w-28 ${selected ? "is-active" : ""}`}
+                      style={{ borderColor: selected ? game.accent : "rgba(255,255,255,0.18)" }}
+                    >
+                      <Image src={game.image} alt="" fill sizes="112px" className="object-cover" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
   );

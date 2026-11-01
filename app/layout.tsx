@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Condensed, Inter, Orbitron } from "next/font/google";
+import { Barlow_Condensed, Chakra_Petch, Inter, Orbitron } from "next/font/google";
 import { JsonLd } from "@/components/JsonLd";
 import { Providers } from "@/components/Providers";
 import { SiteFrame } from "@/components/SiteFrame";
@@ -23,6 +23,13 @@ const barlow = Barlow_Condensed({
   subsets: ["latin"],
   weight: ["600", "700"],
   variable: "--font-barlow",
+  display: "swap",
+});
+
+const chakra = Chakra_Petch({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-chakra",
   display: "swap",
 });
 
@@ -53,10 +60,10 @@ export const metadata: Metadata = {
     description: site.description,
     images: [
       {
-        url: "/images/hero-lounge.jpg",
-        width: 1280,
-        height: 720,
-        alt: "PlayStation 5 lounge with cyan and purple light",
+        url: "/brand/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Nexus Playzone logo on a purple nebula",
       },
     ],
   },
@@ -64,7 +71,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description: site.description,
-    images: ["/images/hero-lounge.jpg"],
+    images: ["/brand/og.jpg"],
   },
 };
 
@@ -80,7 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${orbitron.variable} ${barlow.variable} h-full antialiased`}
+      className={`${inter.variable} ${orbitron.variable} ${barlow.variable} ${chakra.variable} h-full antialiased`}
     >
       <body className="stage min-h-full font-sans text-paper antialiased">
         <Providers>

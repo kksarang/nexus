@@ -6,7 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BookButton } from "@/components/BookSlot";
-import { Logo } from "@/components/Logo";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ScrollXp } from "@/components/ScrollXp";
 import { useStaff } from "@/components/StaffAccess";
 import { nav } from "@/lib/site";
 
@@ -26,6 +27,7 @@ export function Header() {
   const pathname = usePathname();
   const staff = useStaff();
   const [openPath, setOpenPath] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const open = openPath === pathname;
   const adminHref = staff.status === "staff" ? "/admin" : "/admin/login";
@@ -60,29 +62,43 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 240);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // The home title screen already shows the full logo, so the bar stays clear until it scrolls away.
+  const onTitleScreen = pathname === "/" && !scrolled && !open;
+
   function closeMenus() {
     setOpenPath(null);
   }
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#070910]/95 backdrop-blur-xl">
+      <header
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
+          onTitleScreen ? "border-transparent bg-transparent" : "border-white/10 bg-ink/90 backdrop-blur-xl"
+        }`}
+      >
         <div className="shell flex h-20 items-center gap-4">
-          <Logo priority className="h-14 w-auto shrink-0" />
-          <nav className="mx-auto hidden items-center rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex" aria-label="Primary">
+          <div className={`transition-opacity duration-300 ${onTitleScreen ? "pointer-events-none opacity-0" : ""}`} inert={onTitleScreen}>
+            <BrandLogo preload className="h-9 w-auto shrink-0 sm:h-10" />
+          </div>
+          <nav className="mx-auto hidden items-center gap-1 lg:flex" aria-label="Primary">
             {nav.map((item) => {
               const active = isCurrent(pathname, item.href);
-              const Icon = menuMeta[item.href]?.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold whitespace-nowrap ${
-                    active ? "bg-cyan text-ink" : "text-paper hover:bg-white/10"
+                  className={`border-b-2 px-3 py-2 font-display text-sm tracking-[0.08em] whitespace-nowrap uppercase transition-colors ${
+                    active ? "border-magenta text-paper" : "border-transparent text-mist hover:border-cyan hover:text-paper"
                   }`}
                 >
-                  {Icon ? <Icon size={16} aria-hidden="true" /> : null}
                   {item.label}
                 </Link>
               );
@@ -92,12 +108,12 @@ export function Header() {
             <Link href={adminHref} className="text-xs text-mist hover:text-paper">
               Admin
             </Link>
-            <BookButton className="min-h-10 px-4">Book Now</BookButton>
+            <BookButton className="btn-sm">Book Now</BookButton>
           </div>
           <button
             ref={closeRef}
             type="button"
-            className="ml-auto grid size-11 place-items-center rounded-xl border border-white/15 text-paper lg:hidden"
+            className="bevel ml-auto grid size-11 place-items-center border border-white/20 bg-ink/50 text-paper lg:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpenPath(open ? null : pathname)}
@@ -106,13 +122,14 @@ export function Header() {
             <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
           </button>
         </div>
+        <ScrollXp />
       </header>
 
       <AnimatePresence>
         {open ? (
           <motion.div
             id="mobile-nav"
-            className="fixed inset-x-0 top-20 bottom-0 z-[70] overflow-y-auto bg-[#070910] lg:hidden"
+            className="fixed inset-x-0 top-20 bottom-0 z-[70] overflow-y-auto bg-ink lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -132,17 +149,17 @@ export function Header() {
                     href={item.href}
                     onClick={closeMenus}
                     aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-4 rounded-2xl border px-4 py-4 ${
-                      active ? "border-cyan/50 bg-cyan/10" : "border-white/10 bg-white/[0.03]"
+                    className={`bevel flex items-center gap-4 border px-4 py-4 ${
+                      active ? "border-magenta/60 bg-magenta/10" : "border-white/10 bg-white/[0.03]"
                     }`}
                   >
                     {Icon ? (
-                      <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${active ? "bg-cyan text-ink" : "bg-white/5 text-cyan"}`}>
+                      <span className={`bevel grid size-11 shrink-0 place-items-center ${active ? "bg-magenta text-ink" : "bg-white/5 text-cyan"}`}>
                         <Icon size={20} aria-hidden="true" />
                       </span>
                     ) : null}
                     <span>
-                      <span className="block text-lg text-paper">{item.label}</span>
+                      <span className="block font-display text-lg text-paper uppercase">{item.label}</span>
                       {meta ? <span className="mt-0.5 block text-sm text-mist">{meta.hint}</span> : null}
                     </span>
                   </Link>

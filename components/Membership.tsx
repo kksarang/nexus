@@ -12,10 +12,10 @@ export function Membership() {
   const plans = memberPlans(prices);
 
   return (
-    <section id="membership" className="border-t border-white/10 bg-navy/40 py-20 sm:py-28">
+    <section id="membership" className="py-20 sm:py-28">
       <div className="shell">
         <SectionIntro
-          eyebrow="Membership"
+          eyebrow="Season pass"
           title={
             <>
               Monthly, quarterly, <span className="text-gradient">or yearly.</span>
@@ -33,10 +33,19 @@ export function Membership() {
             const length = item.months === 1 ? "1 month" : item.months === 3 ? "3 months" : "12 months";
             return (
               <li key={item.id}>
-                <article className={`panel flex h-full flex-col p-6 sm:p-8 ${item.id === "quarterly" ? "panel-featured" : ""}`}>
-                  <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-cyan uppercase">{item.label}</p>
+                <article className={`panel panel-hover flex h-full flex-col p-6 sm:p-8 ${item.id === "quarterly" ? "panel-featured" : ""}`}>
+                  <p className="font-display text-sm tracking-[0.18em] text-cyan uppercase">{item.label}</p>
                   <p className="mt-3 font-tech text-5xl leading-none text-paper">{formatRupees(item.rupees)}</p>
                   <p className="mt-2 text-sm text-mist">{item.sessions} sessions · {length} · {formatRupees(each)} each</p>
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs text-mist">
+                      <span>Per session</span>
+                      <span>Walk-in {formatRupees(prices.station)}</span>
+                    </div>
+                    <div className="meter mt-1.5" aria-hidden="true">
+                      <span style={{ width: `${Math.min(100, (each / prices.station) * 100)}%` }} />
+                    </div>
+                  </div>
                   <ul className="mt-6 grid flex-1 gap-3">
                     {[
                       `${item.sessions} plays on Stations 01 to 04`,

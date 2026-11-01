@@ -12,7 +12,7 @@ const steps = [
 export function BookingSection({ heading = true }: { heading?: boolean }) {
   return (
     <section id="book" className="relative isolate py-20 sm:py-28">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(22,220,255,0.1),transparent_70%)]" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(139,61,255,0.16),transparent_70%)]" />
       <div className="shell grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
         <div>
           {heading ? (
@@ -32,7 +32,7 @@ export function BookingSection({ heading = true }: { heading?: boolean }) {
             {steps.map((step, index) => {
               const Icon = step.icon;
               return (
-                <li key={step.title} className="flex gap-4 rounded-2xl border border-white/10 p-4">
+                <li key={step.title} className="tile flex gap-4 p-4">
                   <span className="icon-well">
                     <Icon size={18} aria-hidden="true" />
                   </span>

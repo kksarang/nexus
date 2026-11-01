@@ -1,141 +1,139 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState, type KeyboardEvent } from "react";
 import { BookButton } from "@/components/BookSlot";
-import { StatusLine, StatusPill } from "@/components/LiveStatus";
+import { StatusPill } from "@/components/LiveStatus";
 import { SectionIntro } from "@/components/SectionIntro";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
 import { hourlyFor } from "@/lib/prices";
 import { stations } from "@/lib/site";
 
-function PriceTag({ rupees, unit }: { rupees: number | null | undefined; unit?: string }) {
-  if (rupees == null) {
-    return (
-      <p className="text-sm text-mist">
-        <span className="font-tech text-2xl text-white/40">₹ —</span>
-        <span className="ml-2">{unit ?? "per hour"}</span>
-      </p>
-    );
-  }
-  return (
-    <p className="text-sm text-mist">
-      <span className="font-tech text-3xl text-paper">{formatRupees(rupees)}</span> {unit}
-    </p>
-  );
+function zoneOf(station: (typeof stations)[number]) {
+  if (station.privateRoom) return "Private room";
+  return station.rate === "simulator" ? "Car simulator" : "Main floor";
+}
+
+function perksOf(station: (typeof stations)[number]) {
+  if (station.privateRoom) return ["Your own room and PS5", "For friends, couples, and groups", "Book ahead"];
+  if (station.rate === "simulator") return ["Car simulator", "On the main floor", "Book by the hour"];
+  return ["New PlayStation 5", "Full game library", "Book by the hour"];
 }
 
 export function Stations({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();
-  const floor = stations.filter((station) => !station.privateRoom);
-  const room = stations.find((station) => station.privateRoom);
+  const [activeId, setActiveId] = useState<string>(stations[0].id);
+  const active = stations.find((station) => station.id === activeId) ?? stations[0];
+
+  function onRosterKey(event: KeyboardEvent<HTMLDivElement>) {
+    const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = stations[(stations.indexOf(active) + step + stations.length) % stations.length];
+    setActiveId(next.id);
+    event.currentTarget.querySelector<HTMLButtonElement>(`[data-station="${next.id}"]`)?.focus();
+  }
 
   return (
     <section id="zones" className="py-20 sm:py-28">
       <div className="shell">
         {heading ? (
-          <div className="reveal">
-            <SectionIntro
-              eyebrow="Gaming zones"
-              title={
-                <>
-                  Six PS5 stations. <span className="text-gradient">Pick yours.</span>
-                </>
-              }
-              action={
-                <Link href="/stations" className="btn btn-secondary">
-                  View all stations
-                </Link>
-              }
-            >
-              Four PS5 stations, one car simulator, and the private room. Choose a station
-              when you book and we keep it ready for you.
-            </SectionIntro>
-          </div>
+          <SectionIntro
+            eyebrow="Station select"
+            title={
+              <>
+                Choose your <span className="text-gradient">station.</span>
+              </>
+            }
+            action={
+              <Link href="/stations" className="btn btn-secondary">
+                View all stations
+              </Link>
+            }
+          >
+            Four PS5 stations, one car simulator, and the private room. Choose a station when you book and we keep it ready for you.
+          </SectionIntro>
         ) : null}
 
-        <div className={`${heading ? "mt-12" : ""} grid gap-5 sm:grid-cols-2 lg:grid-cols-3`}>
-          {floor.map((station) => (
-            <article key={station.id} className="reveal panel panel-hover group overflow-hidden">
-              <div className="relative aspect-[16/10] overflow-hidden">
+        <div className={`${heading ? "mt-12" : ""} grid gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]`}>
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1" role="group" aria-label="Choose a station" onKeyDown={onRosterKey}>
+            {stations.map((station) => {
+              const selected = station.id === active.id;
+              return (
+                <button
+                  key={station.id}
+                  type="button"
+                  data-station={station.id}
+                  aria-pressed={selected}
+                  onClick={() => setActiveId(station.id)}
+                  onMouseEnter={() => setActiveId(station.id)}
+                  className={`roster tile flex flex-col gap-1 p-3 text-left lg:flex-row lg:items-center lg:gap-4 lg:px-4 ${selected ? "is-active" : ""}`}
+                >
+                  <span className="font-tech text-xl text-paper lg:text-2xl">{station.id}</span>
+                  <span className="min-w-0 font-display text-xs text-mist uppercase lg:text-sm">{station.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <article className="panel panel-featured relative min-h-[32rem] overflow-hidden lg:min-h-[35rem]">
+            <AnimatePresence mode="sync" initial={false}>
+              <motion.div
+                key={active.id}
+                className="absolute inset-0"
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+              >
                 <Image
-                  src={station.image}
-                  alt={station.alt}
+                  src={active.image}
+                  alt={active.alt}
                   fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover transition duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                  style={{ objectPosition: station.objectPosition }}
+                  sizes="(min-width: 1024px) 70vw, 100vw"
+                  className="object-cover"
+                  style={{ objectPosition: active.objectPosition }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/10 to-transparent" />
-                <span className={`absolute top-4 left-4 chip ${station.rate === "simulator" ? "border-[#D6FF3F]/50 text-[#D6FF3F]" : ""}`}>
-                  {station.rate === "simulator" ? "Car simulator" : "Main floor"}
-                </span>
-                <StatusPill id={station.id} className="absolute top-4 right-4" />
-                <span className="absolute right-4 bottom-3 font-tech text-5xl text-white/90">{station.id}</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-2xl tracking-wide text-paper uppercase">{station.name}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-mist">{station.summary}</p>
-                <StatusLine id={station.id} />
-                <ul className="mt-4 space-y-1.5 text-sm text-paper/90">
-                  {(station.rate === "simulator"
-                    ? ["Car simulator", "₹180 an hour", "Book by the hour"]
-                    : ["New PlayStation 5", "Full game library", "Book by the hour"]
-                  ).map((perk) => (
-                    <li key={perk} className="flex items-center gap-2">
-                      <Check size={14} className="text-cyan" aria-hidden="true" />
-                      {perk}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={hourlyFor(station.id, prices)} unit="per hour" />
-                  <BookButton station={station.id} className="min-h-10 px-4">
-                    Book
+              </motion.div>
+            </AnimatePresence>
+            <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-transparent" />
+            <div className="absolute top-4 right-4 left-4 flex items-start justify-between gap-3">
+              <span className="chip">{zoneOf(active)}</span>
+              <StatusPill id={active.id} className="bg-ink/70" />
+            </div>
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+              <p className="font-tech text-6xl text-paper [text-shadow:0_0_30px_rgba(224,3,252,0.9)] sm:text-8xl">{active.id}</p>
+              <h3 className="mt-2 text-3xl text-paper uppercase sm:text-5xl">{active.name}</h3>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-paper/85 sm:text-base">{active.summary}</p>
+              <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-paper">
+                {perksOf(active).map((perk) => (
+                  <li key={perk} className="flex items-center gap-1.5">
+                    <Check size={14} className="text-magenta" aria-hidden="true" />
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-white/15 pt-4">
+                <p className="text-sm text-mist">
+                  <span className="font-tech text-3xl text-paper">{formatRupees(hourlyFor(active.id, prices))}</span> per hour
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {active.privateRoom ? (
+                    <Link href="/private-room" className="btn btn-secondary btn-sm">
+                      Explore
+                    </Link>
+                  ) : null}
+                  <BookButton station={active.id} className="btn-sm">
+                    Select &amp; book
                   </BookButton>
                 </div>
               </div>
-            </article>
-          ))}
-
-          {room ? (
-            <article className="reveal panel panel-featured panel-hover group overflow-hidden">
-              <div className="relative aspect-[16/10] overflow-hidden">
-                <Image
-                  src={room.image}
-                  alt={room.alt}
-                  fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover transition duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/10 to-transparent" />
-                <span className="absolute top-4 left-4 chip border-magenta/50 text-magenta">Private room</span>
-                <StatusPill id={room.id} className="absolute top-4 right-4" />
-                <span className="absolute right-4 bottom-3 font-tech text-5xl text-white/90">{room.id}</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-2xl tracking-wide text-paper uppercase">{room.name}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-mist">{room.summary}</p>
-                <StatusLine id={room.id} />
-                <ul className="mt-4 space-y-1.5 text-sm text-paper/90">
-                  {["Your own room and PS5", "For friends, couples, and groups", "Book ahead"].map((perk) => (
-                    <li key={perk} className="flex items-center gap-2">
-                      <Check size={14} className="text-magenta" aria-hidden="true" />
-                      {perk}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-                  <PriceTag rupees={hourlyFor(room.id, prices)} unit="per hour" />
-                  <Link href="/private-room" className="btn btn-primary min-h-10 px-4">
-                    Explore
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ) : null}
+            </div>
+          </article>
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { MessageCircle, Phone, Radio } from "lucide-react";
+import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { site, stations, whatsappLink } from "@/lib/site";
 import { agoLabel, describeStatus, subscribeStationStatus, type StationStatus, type StatusView } from "@/lib/stationStatus";
@@ -117,20 +118,33 @@ export function StatusPill({ id, className = "" }: { id: string; className?: str
   );
 }
 
-export function StatusLine({ id }: { id: string }) {
+export function StationSelect() {
   const live = useLiveStations();
-  const view = viewFor(live, id);
-  const style = toneStyle[view.tone];
-  const ago = agoLabel(live.map[id]?.updatedAt ?? 0, live.now);
   return (
-    <div className={`mt-4 rounded-xl border px-3 py-2.5 ${style.ring}`} aria-live="polite">
-      <p className={`flex items-center gap-2 text-sm font-semibold ${style.text}`}>
-        <span className={`size-2 rounded-full ${style.dot}`} aria-hidden="true" />
-        {view.label}
+    <div>
+      <p className="flex items-center gap-2 font-display text-xs tracking-[0.2em] text-cyan uppercase">
+        <Radio size={14} aria-hidden="true" /> Select your station
       </p>
-      <p className="mt-0.5 text-xs text-paper/80">{view.detail}</p>
-      {ago ? <p className="mt-0.5 text-[11px] text-mist">{ago}</p> : null}
-      {live.ready && live.now && askTones.includes(view.tone) ? <AskActions name={stations.find((item) => item.id === id)?.name ?? `Station ${id}`} /> : null}
+      <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {stations.map((station) => {
+          const view = viewFor(live, station.id);
+          const style = toneStyle[view.tone];
+          return (
+            <li key={station.id}>
+              <Link href={`/book?station=${station.id}`} className="tile tile-link block h-full p-3" title={view.detail}>
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="font-tech text-xl text-paper">{station.id}</span>
+                  <span className="truncate text-xs text-mist">{station.name}</span>
+                </span>
+                <span className={`mt-2 flex items-center gap-1.5 text-xs font-semibold ${style.text}`}>
+                  <span className={`size-2 shrink-0 rounded-full ${style.dot} ${view.tone === "free" ? "animate-pulse motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+                  {view.label}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -151,7 +165,7 @@ export function LiveBoard() {
         <div className="panel p-5 sm:p-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.2em] text-cyan uppercase">
+              <p className="flex items-center gap-2 font-display text-xs tracking-[0.2em] text-cyan uppercase">
                 <Radio size={14} aria-hidden="true" /> Live right now
               </p>
               <h2 id="live-heading" className="mt-2 text-3xl tracking-wide text-paper uppercase sm:text-4xl">
@@ -178,7 +192,7 @@ export function LiveBoard() {
               const style = toneStyle[view.tone];
               const ago = agoLabel(live.map[station.id]?.updatedAt ?? 0, live.now);
               return (
-                <li key={station.id} className={`rounded-2xl border p-3 sm:p-4 ${style.ring}`}>
+                <li key={station.id} className="tile p-3 sm:p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <div>
                       <p className="font-tech text-2xl text-paper">{station.id}</p>

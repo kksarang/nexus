@@ -1,7 +1,8 @@
 "use client";
 
-import { BadgePercent, Car, Clock, Crown } from "lucide-react";
+import { BadgePercent, Car, Clock, Crown, Minus, Plus } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { BookButton } from "@/components/BookSlot";
 import { WhatsAppButton } from "@/components/ContactButtons";
 import { SectionIntro } from "@/components/SectionIntro";
@@ -9,15 +10,19 @@ import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
 import { messages, offers } from "@/lib/site";
 
-const icons = { station: Clock, simulator: Car, private: Crown } as const;
+const MAX_HOURS = 8;
 
 export function Pricing({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();
-  const rates = [
-    { key: "station", label: "PS5 station", detail: "Stations 01 to 04 on the main floor.", rupees: prices.station, unit: "per hour" },
-    { key: "simulator", label: "Car simulator", detail: "Station 05. The driving simulator on the main floor.", rupees: prices.simulator, unit: "per hour" },
-    { key: "private", label: "Private room", detail: "Station 06. The room and the PS5 are yours for the session.", rupees: prices.privateRoom, unit: "per hour", featured: true },
+  const [modeKey, setModeKey] = useState("station");
+  const [hours, setHours] = useState(2);
+  const modes = [
+    { key: "station", label: "PS5 station", detail: "Stations 01 to 04 on the main floor.", rupees: prices.station, icon: Clock, station: undefined },
+    { key: "simulator", label: "Car simulator", detail: "Station 05. The driving simulator on the main floor.", rupees: prices.simulator, icon: Car, station: "05" },
+    { key: "private", label: "Private room", detail: "Station 06. The room and the PS5 are yours for the session.", rupees: prices.privateRoom, icon: Crown, station: "06" },
   ];
+  const mode = modes.find((item) => item.key === modeKey) ?? modes[0];
+
   return (
     <section id="pricing" className="py-20 sm:py-28">
       <div className="shell">
@@ -26,7 +31,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
             eyebrow="Pricing"
             title={
               <>
-                Simple hourly <span className="text-gradient">rates.</span>
+                Select your <span className="text-gradient">mode.</span>
               </>
             }
             action={
@@ -39,56 +44,59 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
           </SectionIntro>
         ) : null}
 
-        <div className={`${heading ? "mt-12" : ""} grid gap-5 md:grid-cols-3`}>
-          {rates.map((rate) => {
-            const Icon = icons[rate.key as keyof typeof icons] ?? Clock;
+        <div className={`${heading ? "mt-12" : ""} grid gap-4 md:grid-cols-3`} role="group" aria-label="Choose a mode">
+          {modes.map((item) => {
+            const Icon = item.icon;
+            const selected = item.key === mode.key;
             return (
-              <article
-                key={rate.key}
-                className={`reveal panel panel-hover flex flex-col p-7 ${rate.featured ? "panel-featured" : ""}`}
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setModeKey(item.key)}
+                className={`roster panel p-6 text-left sm:p-7 ${selected ? "is-active" : ""}`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="icon-well">
-                    <Icon size={18} aria-hidden="true" />
-                  </span>
-                  {rate.featured ? <span className="chip border-cyan/50 text-cyan">Premium</span> : null}
-                </div>
-                <h3 className="mt-6 text-2xl tracking-wide text-paper uppercase">{rate.label}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-mist">{rate.detail}</p>
-                <div className="mt-6 flex-1 border-t border-white/10 pt-5">
-                  <p className="text-[0.62rem] font-semibold tracking-[0.18em] text-cyan uppercase">
-                    {rate.unit}
-                  </p>
-                  {rate.rupees != null ? (
-                    <p className="mt-2 font-tech text-5xl leading-none text-paper sm:text-6xl">
-                      {formatRupees(rate.rupees)}
-                    </p>
-                  ) : (
-                    <p className="mt-2 font-tech text-5xl leading-none text-white/25 sm:text-6xl">₹ —</p>
-                  )}
-                  {rate.rupees != null ? (
-                    <p className="mt-3 text-sm text-mist">This is the rate for the booking.</p>
-                  ) : null}
-                </div>
-                <BookButton
-                  station={rate.key === "private" ? "06" : rate.key === "simulator" ? "05" : undefined}
-                  variant={rate.featured ? "primary" : "secondary"}
-                  className="mt-6 w-full"
-                >
-                  Book now
-                </BookButton>
-              </article>
+                <span className="icon-well">
+                  <Icon size={18} aria-hidden="true" />
+                </span>
+                <span className="mt-5 block font-display text-2xl text-paper uppercase">{item.label}</span>
+                <span className="mt-2 block min-h-10 text-sm leading-relaxed text-mist">{item.detail}</span>
+                <span className="mt-5 block font-tech text-5xl leading-none text-paper">{formatRupees(item.rupees)}</span>
+                <span className="mt-2 block text-xs tracking-[0.18em] text-cyan uppercase">per hour</span>
+              </button>
             );
           })}
         </div>
 
-        <div className="reveal panel mt-6 flex flex-col gap-6 p-7 md:flex-row md:items-center md:justify-between">
+        <div className="panel panel-featured mt-4 grid items-center gap-6 p-6 sm:p-8 md:grid-cols-[1fr_auto_auto]">
+          <div>
+            <p className="font-display text-sm tracking-[0.18em] text-cyan uppercase">Session calculator</p>
+            <div className="mt-3 flex items-center gap-3">
+              <button type="button" className="bevel grid size-11 place-items-center border border-white/20 text-paper disabled:opacity-40" aria-label="One hour less" disabled={hours <= 1} onClick={() => setHours(hours - 1)}>
+                <Minus size={16} aria-hidden="true" />
+              </button>
+              <p className="min-w-28 text-center font-display text-2xl text-paper uppercase" aria-live="polite">
+                {hours} {hours === 1 ? "hour" : "hours"}
+              </p>
+              <button type="button" className="bevel grid size-11 place-items-center border border-white/20 text-paper disabled:opacity-40" aria-label="One hour more" disabled={hours >= MAX_HOURS} onClick={() => setHours(hours + 1)}>
+                <Plus size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-mist">{mode.label} total</p>
+            <p data-total className="mt-1 font-tech text-5xl leading-none text-paper">{formatRupees(mode.rupees * hours)}</p>
+          </div>
+          <BookButton station={mode.station}>Book this session</BookButton>
+        </div>
+
+        <div className="reveal panel mt-4 flex flex-col gap-6 p-6 sm:p-7 md:flex-row md:items-center md:justify-between">
           <div className="flex gap-4">
-            <span className="icon-well border-magenta/30 bg-magenta/10 text-magenta">
+            <span className="icon-well">
               <BadgePercent size={18} aria-hidden="true" />
             </span>
             <div>
-              <h3 className="text-2xl tracking-wide text-paper uppercase">Special offers</h3>
+              <h3 className="text-2xl text-paper uppercase">Special offers</h3>
               {offers.length ? (
                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                   {offers.map((offer) => (
@@ -101,8 +109,7 @@ export function Pricing({ heading = true }: { heading?: boolean }) {
                 </ul>
               ) : (
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-mist">
-                  Group deals and limited-time offers change through the month. Message us for what is
-                  running right now.
+                  Group deals and limited-time offers change through the month. Message us for what is running right now.
                 </p>
               )}
             </div>

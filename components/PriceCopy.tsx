@@ -33,9 +33,19 @@ export function StationsIntro() {
 
 export function HeroRates() {
   const prices = useLivePrices();
+  const shown = [
+    ["PS5", prices.station],
+    ["Car simulator", prices.simulator],
+    ["Private room", prices.privateRoom],
+  ] as const;
   return (
-    <>
-      Six PS5 setups, including one private room. Stations 01–04 {formatRupees(prices.station)}/hour · Car simulator {formatRupees(prices.simulator)} · Private room {formatRupees(prices.privateRoom)}.
-    </>
+    <dl className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm">
+      {shown.map(([label, rupees]) => (
+        <div key={label} className="flex items-baseline gap-2">
+          <dt className="text-paper/85">{label}</dt>
+          <dd className="font-tech text-paper">{formatRupees(rupees)}/hr</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

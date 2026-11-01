@@ -179,7 +179,7 @@ export function BookingForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="panel p-5 sm:p-8">
-      <div role="tablist" aria-label="Booking type" className="grid grid-cols-2 gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
+      <div role="tablist" aria-label="Booking type" className="bevel grid grid-cols-2 gap-1 border border-white/10 bg-black/30 p-1">
         {(
           [
             ["station", "Station booking"],
@@ -285,7 +285,7 @@ export function BookingForm() {
                 }))].map((option) => (
                   <label
                     key={option.id}
-                    className={`cursor-pointer rounded-xl border px-3 py-3 text-center transition-colors ${
+                    className={`bevel cursor-pointer border px-3 py-3 text-center transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-magenta ${
                       station === option.id
                         ? option.id === "06"
                           ? "border-magenta bg-magenta/15"
@@ -345,6 +345,22 @@ export function BookingForm() {
           />
         </label>
       </div>
+
+      {mode === "station" ? (
+        <dl className="tile mt-7 grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
+          {[
+            ["Station", station === "any" ? "Any" : station],
+            ["Slot", date && time ? `${formatDate(date)}, ${formatTime(time)}` : "Not set"],
+            ["Players", players],
+            ["Estimate", hours.includes("+") ? "Ask us" : formatRupees(hourlyFor(station === "any" ? "01" : station, prices) * Number.parseInt(hours, 10))],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="field-label">{label}</dt>
+              <dd className="mt-1 font-display text-paper">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
 
       <div className="mt-7 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-sm text-xs leading-relaxed text-mist">

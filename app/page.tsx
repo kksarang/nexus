@@ -4,14 +4,13 @@ import { Founders } from "@/components/Founders";
 import { Gallery } from "@/components/Gallery";
 import { Games } from "@/components/Games";
 import { Hero } from "@/components/Hero";
-import { LiveBoard } from "@/components/LiveStatus";
 import { Location } from "@/components/Location";
 import { LoyaltyHome } from "@/components/LoyaltyHome";
 import { Membership } from "@/components/Membership";
 import { Pricing } from "@/components/Pricing";
 import { PrivateRoom } from "@/components/PrivateRoom";
-import { Reviews } from "@/components/Reviews";
 import { Stations } from "@/components/Stations";
+import { Ticker } from "@/components/Ticker";
 import { WhyNexus } from "@/components/WhyNexus";
 
 export const metadata: Metadata = {
@@ -24,17 +23,16 @@ export default function HomePage() {
   return (
     <main id="content">
       <Hero />
-      <LiveBoard />
+      <Ticker />
       <WhyNexus />
       <Stations />
       <PrivateRoom />
       <Games />
       <Pricing />
       <Membership />
-      <BookingSection />
       <LoyaltyHome />
+      <BookingSection />
       <Gallery />
-      <Reviews />
       <Founders />
       <Location />
     </main>
