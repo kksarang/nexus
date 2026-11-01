@@ -283,7 +283,7 @@ export function BookingForm() {
                 {[{ id: "any", label: "Any", sub: "First free" }, ...stations.map((item) => ({
                   id: item.id,
                   label: item.id,
-                  sub: item.rate === "simulator" ? "Car sim" : item.privateRoom ? "Private" : "Floor",
+                  sub: item.rate === "simulator" ? "Car sim" : item.privateRoom ? "Private" : "Console",
                 }))].map((option) => (
                   <label
                     key={option.id}
