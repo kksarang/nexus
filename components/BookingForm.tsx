@@ -4,8 +4,8 @@ import { CheckCircle2, MessageCircle, Phone } from "lucide-react";
 import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { hourlyFor } from "@/lib/prices";
-import { memberPlan, memberPlans } from "@/lib/prices";
+import { hourlyFor } from "@/lib/pricesCore";
+import { memberPlan, memberPlans } from "@/lib/pricesCore";
 import { site, stations, whatsappLink } from "@/lib/site";
 
 type Mode = "station" | "membership";

@@ -2,7 +2,8 @@
 
 import { Megaphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { subscribeNotice, type SiteNotice as Notice } from "@/lib/manageApi";
+import type { SiteNotice as Notice } from "@/lib/manageApi";
+import { whenIdle } from "@/lib/whenIdle";
 
 const DISMISS_KEY = "nexus-notice-dismissed";
 
@@ -12,14 +13,20 @@ export function SiteNotice() {
   const [dismissed, setDismissed] = useState<number | null>(null);
 
   useEffect(() => {
-    const stop = subscribeNotice(setNotice);
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    whenIdle(async () => {
+      const { subscribeNotice } = await import("@/lib/manageApi");
+      if (!cancelled) stop = subscribeNotice(setNotice);
+    });
     const frame = window.requestAnimationFrame(() => {
       setNow(Date.now());
       setDismissed(Number(window.sessionStorage.getItem(DISMISS_KEY) ?? 0));
     });
     const timer = window.setInterval(() => setNow(Date.now()), 30000);
     return () => {
-      stop();
+      cancelled = true;
+      stop?.();
       window.cancelAnimationFrame(frame);
       window.clearInterval(timer);
     };

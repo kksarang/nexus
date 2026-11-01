@@ -10,7 +10,7 @@ import { StatusPill } from "@/components/LiveStatus";
 import { SectionIntro } from "@/components/SectionIntro";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { hourlyFor } from "@/lib/prices";
+import { hourlyFor } from "@/lib/pricesCore";
 import { stations } from "@/lib/site";
 
 function zoneOf(station: (typeof stations)[number]) {

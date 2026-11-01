@@ -2,7 +2,7 @@
 
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { memberPlans } from "@/lib/prices";
+import { memberPlans } from "@/lib/pricesCore";
 
 export function MembershipCompare() {
   const prices = useLivePrices();

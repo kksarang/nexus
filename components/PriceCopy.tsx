@@ -2,7 +2,7 @@
 
 import { formatRupees } from "@/lib/format";
 import { useLivePrices } from "@/components/useLivePrices";
-import { memberPlans } from "@/lib/prices";
+import { memberPlans } from "@/lib/pricesCore";
 import { games } from "@/lib/site";
 
 export function RateChips() {

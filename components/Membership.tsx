@@ -5,7 +5,7 @@ import Link from "next/link";
 import { SectionIntro } from "@/components/SectionIntro";
 import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
-import { memberPlans } from "@/lib/prices";
+import { memberPlans } from "@/lib/pricesCore";
 
 export function Membership({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();

@@ -4,7 +4,7 @@ import { MessageCircle, Phone, Radio } from "lucide-react";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { site, stations, whatsappLink } from "@/lib/site";
-import { agoLabel, describeStatus, subscribeStationStatus, type StationStatus, type StatusView } from "@/lib/stationStatus";
+import { agoLabel, describeStatus, subscribeStationStatus, type StationStatus, type StatusView } from "@/lib/stationStatusCore";
 
 type Feed = { ready: boolean; failed: boolean; map: Record<string, StationStatus> };
 
