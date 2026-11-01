@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CallButton, WhatsAppButton } from "@/components/ContactButtons";
+import { Faq } from "@/components/Faq";
 import { Location } from "@/components/Location";
 import { PageHero } from "@/components/PageHero";
 
@@ -30,6 +31,7 @@ export default function ContactPage() {
         Phone, WhatsApp, and email are the ways to reach the lounge. Message ahead if you want a station held.
       </PageHero>
       <Location heading={false} />
+      <Faq />
     </main>
   );
 }

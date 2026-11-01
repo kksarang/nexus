@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/Hero";
 import { HomeDoors } from "@/components/HomeDoors";
+import { HomeGames } from "@/components/HomeGames";
 import { HomeSteps } from "@/components/HomeSteps";
 import { HomeStats } from "@/components/PriceCopy";
 
@@ -16,6 +17,7 @@ export default function HomePage() {
       <Hero />
       <HomeStats />
       <HomeDoors />
+      <HomeGames />
       <HomeSteps />
     </main>
   );

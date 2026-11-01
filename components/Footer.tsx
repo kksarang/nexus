@@ -19,7 +19,7 @@ export function Footer() {
         </div>
         <div>
           <p className="font-display text-xs tracking-[0.2em] text-cyan uppercase">Explore</p>
-          <ul className="mt-4 space-y-2 text-sm text-mist">
+          <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-mist">
             {nav.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="hover:text-paper">

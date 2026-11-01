@@ -126,7 +126,16 @@ export const highlights = [
   { value: "Panoor", label: "Kannur, Kerala" },
 ] as const;
 
-export const games = [
+export type Game = {
+  title: string;
+  genre: string;
+  modes: string;
+  accent: string;
+  image?: string;
+  alt?: string;
+};
+
+export const games: Game[] = [
   {
     title: "EA Sports FC",
     genre: "Football",
@@ -175,9 +184,27 @@ export const games = [
     alt: "A PlayStation 5 console on a dark desk",
     accent: "#F5C542",
   },
-] as const;
+  { title: "NBA 2K", genre: "Sports", modes: "Latest 2K · 1–4 players", accent: "#FF7A1A" },
+  { title: "EA Sports Cricket", genre: "Sports", modes: "Local versus", accent: "#2FD5A7" },
+  { title: "Rocket League", genre: "Sports", modes: "1–4 players", accent: "#2E9BFF" },
+  { title: "Tekken 8", genre: "Fighting", modes: "1–2 players", accent: "#FF3D6E" },
+  { title: "Mortal Kombat 1", genre: "Fighting", modes: "1–2 players", accent: "#FFB020" },
+  { title: "Street Fighter 6", genre: "Fighting", modes: "1–2 players", accent: "#FF4FD8" },
+  { title: "Gran Turismo 7", genre: "Racing", modes: "1–2 players", accent: "#37B6FF" },
+  { title: "F1", genre: "Racing", modes: "Latest season · 1–2 players", accent: "#FF2A2A" },
+  { title: "Call of Duty", genre: "Shooter", modes: "Campaign · Online", accent: "#9BE34B" },
+  { title: "Fortnite", genre: "Shooter", modes: "Battle royale · Online", accent: "#A66BFF" },
+  { title: "God of War Ragnarök", genre: "Action adventure", modes: "Solo story", accent: "#7CC7FF" },
+  { title: "The Last of Us Part II", genre: "Action adventure", modes: "Solo story", accent: "#8FBF6A" },
+  { title: "Elden Ring", genre: "Action adventure", modes: "Solo · Online co-op", accent: "#E0B84C" },
+  { title: "Red Dead Redemption 2", genre: "Open world", modes: "Solo story", accent: "#E5533D" },
+  { title: "It Takes Two", genre: "Co-op", modes: "2 players", accent: "#FF8AC4" },
+  { title: "Split Fiction", genre: "Co-op", modes: "2 players", accent: "#5CE1E6" },
+  { title: "Minecraft", genre: "Co-op", modes: "1–4 players", accent: "#6FCF4A" },
+  { title: "Astro Bot", genre: "Co-op", modes: "Solo adventure", accent: "#4C8DFF" },
+];
 
-export const gameGenres = ["All", "Football", "Wrestling", "Open world", "Action adventure", "Racing", "Action"] as const;
+export const gameGenres = ["All", "Football", "Sports", "Wrestling", "Fighting", "Racing", "Shooter", "Open world", "Action adventure", "Action", "Co-op"];
 
 export const stations = [
   {

@@ -60,6 +60,7 @@ export function BookingForm() {
   const prices = useLivePrices();
   const presetStation = useQueryParam("station");
   const presetPlan = useQueryParam("plan");
+  const presetGame = useQueryParam("game");
   const today = useToday();
   const formId = useId();
 
@@ -78,7 +79,8 @@ export function BookingForm() {
   const [time, setTime] = useState("");
   const [hours, setHours] = useState(hourOptions[0]);
   const [players, setPlayers] = useState("2");
-  const [notes, setNotes] = useState("");
+  const [notesChoice, setNotes] = useState<string | null>(null);
+  const notes = notesChoice ?? (presetGame ? `Please keep ${presetGame} ready.` : "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sentLink, setSentLink] = useState("");
 

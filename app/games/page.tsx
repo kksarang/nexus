@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BookButton } from "@/components/BookSlot";
 import { Games } from "@/components/Games";
 import { PageHero } from "@/components/PageHero";
+import { games } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "PS5 Game Library",
@@ -23,9 +24,9 @@ export default function GamesPage() {
         image="/images/controller-glow.jpg"
         actions={<BookButton>Book a session</BookButton>}
       >
-        The main PS5 games ready on the consoles. Filter by genre below, or ask for a title that is not listed.
+        {games.length} games to choose from. Search or filter below, then book and we keep your game ready. Ask if you want a title that is not listed.
       </PageHero>
-      <Games heading={false} />
+      <Games />
     </main>
   );
 }

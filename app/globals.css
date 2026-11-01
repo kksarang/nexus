@@ -1224,3 +1224,76 @@ html:has(.admin-light) {
   background: rgba(255, 255, 255, 0.1);
   box-shadow: none;
 }
+
+.game-tile-card {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.game-tile-card:hover,
+.game-tile-card.is-active {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.game-rail {
+  scrollbar-width: none;
+}
+
+.site-skin .btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.site-skin .btn-primary::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  transform: translateX(-110%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.35), transparent 70%);
+  transition: transform 0.6s ease;
+}
+
+.site-skin .btn-primary:hover::after {
+  transform: translateX(110%);
+}
+
+.faq-item summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #ee4bff;
+  content: "+";
+}
+
+.faq-item[open] summary::after {
+  content: "–";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-tile-card,
+  .game-tile-card:hover,
+  .game-tile-card.is-active {
+    transition: none;
+    transform: none;
+  }
+
+  .site-skin .btn-primary::after {
+    display: none;
+  }
+}
