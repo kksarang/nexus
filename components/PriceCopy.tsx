@@ -31,21 +31,24 @@ export function StationsIntro() {
   );
 }
 
-export function HeroRates() {
+export function HomeStats() {
   const prices = useLivePrices();
   const shown = [
-    ["PS5", prices.station],
-    ["Car simulator", prices.simulator],
-    ["Private room", prices.privateRoom],
-  ] as const;
+    ["06", "Gaming stations"],
+    ["01", "Private room"],
+    [formatRupees(prices.station), "Per hour, from"],
+    ["Panoor", "Kannur, Kerala"],
+  ];
   return (
-    <dl className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm">
-      {shown.map(([label, rupees]) => (
-        <div key={label} className="flex items-baseline gap-2">
-          <dt className="text-paper/85">{label}</dt>
-          <dd className="font-tech text-paper">{formatRupees(rupees)}/hr</dd>
-        </div>
-      ))}
-    </dl>
+    <section className="border-y border-white/10 bg-navy/70">
+      <dl className="shell grid grid-cols-2 lg:grid-cols-4">
+        {shown.map(([value, label]) => (
+          <div key={label} className="py-6 sm:py-8">
+            <dd className="font-tech text-2xl text-paper sm:text-4xl">{value}</dd>
+            <dt className="mt-1.5 text-xs tracking-[0.14em] text-mist uppercase">{label}</dt>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

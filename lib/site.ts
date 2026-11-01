@@ -108,14 +108,15 @@ export const nav = [
   { href: "/private-room", label: "Private Room" },
   { href: "/games", label: "Games" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
 export const footerLinks = [
   { href: "/", label: "Home" },
+  { href: "/membership", label: "Membership" },
   { href: "/player", label: "Rewards" },
-  { href: "/gallery", label: "Gallery" },
-  { href: "/about", label: "About Us" },
 ] as const;
 
 export const highlights = [

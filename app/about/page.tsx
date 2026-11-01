@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Founders } from "@/components/Founders";
 import { PageHero } from "@/components/PageHero";
+import { WhyNexus } from "@/components/WhyNexus";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function AboutPage() {
       >
         {site.description} {site.tagline}
       </PageHero>
+      <WhyNexus />
       <Founders />
     </main>
   );

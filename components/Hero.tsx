@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { BookButton } from "@/components/BookSlot";
 import { StationSelect } from "@/components/LiveStatus";
-import { HeroRates } from "@/components/PriceCopy";
 import { site } from "@/lib/site";
 
 export function Hero() {
@@ -29,13 +28,10 @@ export function Hero() {
           A PS5 gaming station in Panoor for Thalassery and Kannur. Six consoles, a private room, and a real game experience with your people.
         </p>
         <div className="boot mt-6 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row" style={{ "--boot": 4 } as CSSProperties}>
-          <BookButton className="press-start w-full sm:w-auto">Press start · Book now</BookButton>
-          <Link href="#zones" className="btn btn-secondary w-full sm:w-auto">
-            Explore the Gaming Zones
+          <BookButton className="w-full sm:w-auto">Book your session</BookButton>
+          <Link href="/stations" className="btn btn-secondary w-full sm:w-auto">
+            Explore the stations
           </Link>
-        </div>
-        <div className="mt-5">
-          <HeroRates />
         </div>
       </div>
       <div className="shell">

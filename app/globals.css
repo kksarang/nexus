@@ -870,7 +870,7 @@ html:has(.admin-light) {
   inset: 0;
   z-index: -1;
   content: "";
-  opacity: 0.3;
+  opacity: 0.1;
   background: url("/brand/nebula.jpg") center / cover no-repeat;
 }
 
@@ -1057,51 +1057,11 @@ html:has(.admin-light) {
   transform: perspective(420px) rotateX(62deg);
   transform-origin: bottom;
   background-image:
-    linear-gradient(rgba(238, 75, 255, 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(238, 75, 255, 0.5) 1px, transparent 1px);
+    linear-gradient(rgba(238, 75, 255, 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(238, 75, 255, 0.28) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: linear-gradient(to top, #000, transparent);
   pointer-events: none;
-}
-
-.ghost-word {
-  position: absolute;
-  inset: -2.2rem 0 auto;
-  overflow: hidden;
-  font-family: var(--font-chakra), sans-serif;
-  font-size: clamp(3.6rem, 12vw, 9.5rem);
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  text-transform: uppercase;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(189, 147, 255, 0.14);
-  pointer-events: none;
-}
-
-.ticker {
-  overflow: hidden;
-  border-block: 1px solid rgba(238, 75, 255, 0.35);
-  background: rgba(14, 10, 32, 0.8);
-}
-
-.ticker-track {
-  display: flex;
-  width: max-content;
-}
-
-.ticker-word {
-  padding: 0.8rem 1.4rem;
-  font-family: var(--font-chakra), sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #f7f5fd;
-}
-
-.ticker-word:nth-child(even) {
-  color: #ee4bff;
 }
 
 .scroll-xp {
@@ -1184,8 +1144,8 @@ html:has(.admin-light) {
     animation: floor-run 2.4s linear infinite;
   }
 
-  .ticker-track {
-    animation: ticker-run 45s linear infinite;
+  .page-in {
+    animation: page-in 0.35s ease both;
   }
 
   .boot {
@@ -1227,9 +1187,9 @@ html:has(.admin-light) {
   }
 }
 
-@keyframes ticker-run {
-  to {
-    transform: translateX(-50%);
+@keyframes page-in {
+  from {
+    opacity: 0;
   }
 }
 

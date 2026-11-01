@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoyaltySim } from "@/components/LoyaltySim";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
   title: "Player card",
@@ -10,19 +11,20 @@ export const metadata: Metadata = {
 export default function PlayerPage() {
   return (
     <main id="content">
-      <section className="pt-28 pb-20 sm:pt-32 sm:pb-24">
+      <PageHero
+        eyebrow="Rewards"
+        title={
+          <>
+            Your <span className="text-gradient">player card.</span>
+          </>
+        }
+        image="/images/controller-glow.jpg"
+      >
+        One paid hour earns 1 point. Ten points from Monday to Sunday unlocks 30 minutes of free play. Ask the counter to look up your mobile number and show the card.
+      </PageHero>
+      <section className="py-16 sm:py-24">
         <div className="shell">
-          <p className="eyebrow">Loyalty</p>
-          <h1 className="mt-5 max-w-3xl text-[2.5rem] text-paper uppercase sm:text-6xl">
-            Your player card
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-mist">
-            One paid hour earns 1 point. Ten points from Monday to Sunday unlocks 30 minutes of free play. Ask the
-            counter to look up your mobile number and show the card.
-          </p>
-          <div className="mt-8">
-            <LoyaltySim />
-          </div>
+          <LoyaltySim />
           <div className="mt-4 grid gap-4 lg:grid-cols-3">
             {[
               ["1 point", "Every 60 paid minutes. Shorter sessions add up."],

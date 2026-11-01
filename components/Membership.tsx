@@ -7,15 +7,16 @@ import { useLivePrices } from "@/components/useLivePrices";
 import { formatRupees } from "@/lib/format";
 import { memberPlans } from "@/lib/prices";
 
-export function Membership() {
+export function Membership({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();
   const plans = memberPlans(prices);
 
   return (
     <section id="membership" className="py-20 sm:py-28">
       <div className="shell">
+        {heading ? (
         <SectionIntro
-          eyebrow="Season pass"
+          eyebrow="Membership"
           title={
             <>
               Monthly, quarterly, <span className="text-gradient">or yearly.</span>
@@ -25,8 +26,9 @@ export function Membership() {
           A walk-in PS5 hour is {formatRupees(prices.station)}. A plan covers Stations 01 to 04. The car simulator
           stays {formatRupees(prices.simulator)} an hour and the private room stays {formatRupees(prices.privateRoom)}.
         </SectionIntro>
+        ) : null}
 
-        <ul className="mt-12 grid gap-5 lg:grid-cols-3">
+        <ul className={`${heading ? "mt-12" : ""} grid gap-5 lg:grid-cols-3`}>
           {plans.map((item) => {
             const each = item.sessions ? Math.round(item.rupees / item.sessions) : 0;
             const saved = prices.station * item.sessions - item.rupees;

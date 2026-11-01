@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { DoorOpen, Gamepad2, IndianRupee, Joystick, Menu, Phone, X, type LucideIcon } from "lucide-react";
+import { DoorOpen, Gamepad2, Images, Info, IndianRupee, Joystick, Menu, Phone, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +16,8 @@ const menuMeta: Record<string, { hint: string; icon: LucideIcon }> = {
   "/private-room": { hint: "A room for your crew", icon: DoorOpen },
   "/games": { hint: "What you can play", icon: Joystick },
   "/pricing": { hint: "Hourly rates", icon: IndianRupee },
+  "/gallery": { hint: "Inside the lounge", icon: Images },
+  "/about": { hint: "The founders", icon: Info },
   "/contact": { hint: "Panoor, Kannur", icon: Phone },
 };
 
@@ -33,7 +35,7 @@ export function Header() {
   const adminHref = staff.status === "staff" ? "/admin" : "/admin/login";
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 1024px)");
+    const media = window.matchMedia("(min-width: 1280px)");
     const close = () => {
       if (media.matches) setOpenPath(null);
     };
@@ -87,7 +89,7 @@ export function Header() {
           <div className={`transition-opacity duration-300 ${onTitleScreen ? "pointer-events-none opacity-0" : ""}`} inert={onTitleScreen}>
             <BrandLogo preload className="h-9 w-auto shrink-0 sm:h-10" />
           </div>
-          <nav className="mx-auto hidden items-center gap-1 lg:flex" aria-label="Primary">
+          <nav className="mx-auto hidden items-center gap-1 xl:flex" aria-label="Primary">
             {nav.map((item) => {
               const active = isCurrent(pathname, item.href);
               return (
@@ -104,7 +106,7 @@ export function Header() {
               );
             })}
           </nav>
-          <div className="ml-auto hidden items-center gap-4 lg:flex">
+          <div className="ml-auto hidden items-center gap-4 xl:flex">
             <Link href={adminHref} className="text-xs text-mist hover:text-paper">
               Admin
             </Link>
@@ -113,7 +115,7 @@ export function Header() {
           <button
             ref={closeRef}
             type="button"
-            className="bevel ml-auto grid size-11 place-items-center border border-white/20 bg-ink/50 text-paper lg:hidden"
+            className="bevel ml-auto grid size-11 place-items-center border border-white/20 bg-ink/50 text-paper xl:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpenPath(open ? null : pathname)}
@@ -129,7 +131,7 @@ export function Header() {
         {open ? (
           <motion.div
             id="mobile-nav"
-            className="fixed inset-x-0 top-20 bottom-0 z-[70] overflow-y-auto bg-ink lg:hidden"
+            className="fixed inset-x-0 top-20 bottom-0 z-[70] overflow-y-auto bg-ink xl:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

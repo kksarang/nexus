@@ -26,7 +26,7 @@ function Chrome({ children }: { children: ReactNode }) {
       <Suspense fallback={<div className="h-20" />}>
         <Header />
       </Suspense>
-      <div className="flex-1">{children}</div>
+      <div key={pathname} className="page-in flex-1">{children}</div>
       {pathname === "/book" ? null : <FinalCta />}
       <Footer />
       <MobileBar />

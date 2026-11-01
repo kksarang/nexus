@@ -8,6 +8,7 @@ const routes = [
   ["/book", 0.9],
   ["/games", 0.7],
   ["/pricing", 0.8],
+  ["/membership", 0.7],
   ["/gallery", 0.6],
   ["/visit", 0.8],
   ["/about", 0.6],

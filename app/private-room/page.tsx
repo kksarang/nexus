@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { BookingSection } from "@/components/BookingSection";
 import { PrivateRoom } from "@/components/PrivateRoom";
 
 export const metadata: Metadata = {
@@ -11,9 +10,8 @@ export const metadata: Metadata = {
 
 export default function PrivateRoomPage() {
   return (
-    <main id="content" className="pt-16">
+    <main id="content">
       <PrivateRoom standalone />
-      <BookingSection />
     </main>
   );
 }

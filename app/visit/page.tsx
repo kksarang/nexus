@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { CallButton, WhatsAppButton } from "@/components/ContactButtons";
-import { Founders } from "@/components/Founders";
 import { Location } from "@/components/Location";
 import { PageHero } from "@/components/PageHero";
 
@@ -32,7 +31,6 @@ export default function VisitPage() {
         Drop in, say hi, and grab a controller. Message ahead to make sure your station is free.
       </PageHero>
       <Location heading={false} />
-      <Founders />
     </main>
   );
 }
