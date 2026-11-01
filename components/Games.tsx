@@ -4,31 +4,21 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Gamepad2, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { WhatsAppButton } from "@/components/ContactButtons";
 import { GameTileArt } from "@/components/GameTile";
-import { gameGenres, games, messages } from "@/lib/site";
+import { gameGenres, gameSlug, games, isGameInGenre, messages } from "@/lib/site";
 
 export function Games() {
   const [genre, setGenre] = useState("All");
   const [query, setQuery] = useState("");
   const [activeTitle, setActiveTitle] = useState(games[0].title);
-  const stageRef = useRef<HTMLDivElement>(null);
 
   const needle = query.trim().toLowerCase();
   const list = games.filter(
-    (game) => (genre === "All" || game.genre === genre) && (!needle || game.title.toLowerCase().includes(needle)),
+    (game) => isGameInGenre(game, genre) && (!needle || game.title.toLowerCase().includes(needle)),
   );
   const active = list.find((game) => game.title === activeTitle) ?? list[0] ?? null;
-
-  function pick(title: string) {
-    setActiveTitle(title);
-    // On phones the preview sits above the wall, so bring it back into view.
-    if (window.matchMedia("(max-width: 1023px)").matches) {
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      stageRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-    }
-  }
 
   return (
     <section id="games" className="py-16 sm:py-20">
@@ -59,7 +49,7 @@ export function Games() {
 
         {active ? (
           <div className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-            <div ref={stageRef} className="panel relative h-[26rem] overflow-hidden sm:h-[32rem] lg:sticky lg:top-24">
+            <div className="panel relative hidden lg:block h-[32rem] overflow-hidden lg:sticky lg:top-24">
               <AnimatePresence mode="sync" initial={false}>
                 <motion.div
                   key={active.title}
@@ -83,9 +73,15 @@ export function Games() {
                   <Gamepad2 size={16} aria-hidden="true" style={{ color: active.accent }} />
                   {active.modes}
                 </p>
-                <Link href={`/book?game=${encodeURIComponent(active.title)}`} className="btn btn-primary btn-sm mt-5">
-                  Book &amp; keep it ready
-                </Link>
+                <p className="mt-3 line-clamp-2 max-w-xl text-sm text-paper/85">{active.about}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link href={`/games/${gameSlug(active.title)}`} className="btn btn-primary btn-sm">
+                    View game details
+                  </Link>
+                  <Link href={`/book?game=${encodeURIComponent(active.title)}`} className="btn btn-secondary btn-sm">
+                    Book &amp; keep it ready
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -94,17 +90,17 @@ export function Games() {
                 const selected = game.title === active.title;
                 return (
                   <li key={game.title}>
-                    <button
-                      type="button"
+                    <Link
+                      href={`/games/${gameSlug(game.title)}`}
                       data-game
-                      aria-pressed={selected}
-                      onClick={() => pick(game.title)}
+                      aria-label={`${game.title} details`}
                       onMouseEnter={() => setActiveTitle(game.title)}
+                      onFocus={() => setActiveTitle(game.title)}
                       className={`game-tile-card bevel relative block aspect-[4/3] w-full overflow-hidden border-2 ${selected ? "is-active" : ""}`}
                       style={{ borderColor: selected ? game.accent : "rgba(255,255,255,0.12)" }}
                     >
                       <GameTileArt game={game} />
-                    </button>
+                    </Link>
                   </li>
                 );
               })}

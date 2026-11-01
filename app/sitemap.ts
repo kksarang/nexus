@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site";
+import { gameSlug, games, getSiteUrl } from "@/lib/site";
 
 const routes = [
   ["/", 1],
@@ -18,9 +18,14 @@ const routes = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSiteUrl();
-  return routes.map(([path, priority]) => ({
+  const pages = routes.map(([path, priority]) => ({
     url: `${base}${path}`,
     changeFrequency: "weekly",
     priority,
   }));
+  const gamePages = games.map((game) => ({
+    url: `${base}/games/${gameSlug(game.title)}`,
+    priority: 0.5,
+  }));
+  return [...pages, ...gamePages];
 }

@@ -144,13 +144,16 @@ export type Game = {
   genre: string;
   modes: string;
   accent: string;
+  about: string;
+  bestFor: string;
+  story?: boolean;
   image?: string;
   alt?: string;
 };
 
 export const games: Game[] = [
   {
-    title: "EA Sports FC",
+    title: "EA Sports FC", about: "Football with real clubs, players, and leagues. Settle it in a quick match with a friend or build your squad over a longer session.", bestFor: "Football rivalries with your friends",
     genre: "Football",
     modes: "Latest edition · 1–2 players",
     image: "/images/games/game-fc.jpg",
@@ -158,7 +161,7 @@ export const games: Game[] = [
     accent: "#3DDC6A",
   },
   {
-    title: "WWE 2K",
+    title: "WWE 2K", about: "Step into the ring with WWE superstars across singles, tag team, and multi-man matches.", bestFor: "Loud group sessions",
     genre: "Wrestling",
     modes: "Latest 2K · 1–4 players",
     image: "/images/games/game-wwe.jpg",
@@ -166,7 +169,7 @@ export const games: Game[] = [
     accent: "#FF3B30",
   },
   {
-    title: "GTA V",
+    title: "GTA V", about: "Follow Michael, Franklin, and Trevor through a run of high-stakes heists across the huge open world of Los Santos.", bestFor: "Free-roaming and big story missions", story: true,
     genre: "Open world",
     modes: "Story · GTA Online",
     image: "/images/games/game-gta.jpg",
@@ -174,7 +177,7 @@ export const games: Game[] = [
     accent: "#FF9F1A",
   },
   {
-    title: "Marvel’s Spider-Man 2",
+    title: "Marvel’s Spider-Man 2", about: "Swing through Marvel’s New York as Peter Parker and Miles Morales, and take on Venom and Kraven the Hunter.", bestFor: "Superhero fans who want a full story", story: true,
     genre: "Action adventure",
     modes: "Solo story",
     image: "/images/games/game-spiderman.jpg",
@@ -182,7 +185,7 @@ export const games: Game[] = [
     accent: "#4C6FFF",
   },
   {
-    title: "Star Wars: Galactic Racer",
+    title: "Star Wars: Galactic Racer", about: "High-speed racing set in the Star Wars galaxy.", bestFor: "Star Wars fans and racing players",
     genre: "Racing",
     modes: "Solo · 2026",
     image: "/images/games/game-racing.jpg",
@@ -190,34 +193,55 @@ export const games: Game[] = [
     accent: "#D6FF3F",
   },
   {
-    title: "Ghost of Yōtei",
+    title: "Ghost of Yōtei", about: "Play as Atsu, a lone mercenary in 1600s Japan, on a hunt for the gang who destroyed her family.", bestFor: "Samurai action and a strong story", story: true,
     genre: "Action",
     modes: "Solo story · PS5",
-    image: "/images/ps5-console.jpg",
-    alt: "A PlayStation 5 console on a dark desk",
     accent: "#F5C542",
   },
-  { title: "NBA 2K", genre: "Sports", modes: "Latest 2K · 1–4 players", accent: "#FF7A1A" },
-  { title: "EA Sports Cricket", genre: "Sports", modes: "Local versus", accent: "#2FD5A7" },
-  { title: "Rocket League", genre: "Sports", modes: "1–4 players", accent: "#2E9BFF" },
-  { title: "Tekken 8", genre: "Fighting", modes: "1–2 players", accent: "#FF3D6E" },
-  { title: "Mortal Kombat 1", genre: "Fighting", modes: "1–2 players", accent: "#FFB020" },
-  { title: "Street Fighter 6", genre: "Fighting", modes: "1–2 players", accent: "#FF4FD8" },
-  { title: "Gran Turismo 7", genre: "Racing", modes: "1–2 players", accent: "#37B6FF" },
-  { title: "F1", genre: "Racing", modes: "Latest season · 1–2 players", accent: "#FF2A2A" },
-  { title: "Call of Duty", genre: "Shooter", modes: "Campaign · Online", accent: "#9BE34B" },
-  { title: "Fortnite", genre: "Shooter", modes: "Battle royale · Online", accent: "#A66BFF" },
-  { title: "God of War Ragnarök", genre: "Action adventure", modes: "Solo story", accent: "#7CC7FF" },
-  { title: "The Last of Us Part II", genre: "Action adventure", modes: "Solo story", accent: "#8FBF6A" },
-  { title: "Elden Ring", genre: "Action adventure", modes: "Solo · Online co-op", accent: "#E0B84C" },
-  { title: "Red Dead Redemption 2", genre: "Open world", modes: "Solo story", accent: "#E5533D" },
-  { title: "It Takes Two", genre: "Co-op", modes: "2 players", accent: "#FF8AC4" },
-  { title: "Split Fiction", genre: "Co-op", modes: "2 players", accent: "#5CE1E6" },
-  { title: "Minecraft", genre: "Co-op", modes: "1–4 players", accent: "#6FCF4A" },
-  { title: "Astro Bot", genre: "Co-op", modes: "Solo adventure", accent: "#4C8DFF" },
+  { title: "NBA 2K", about: "Basketball with real NBA teams and players, from quick games to full-court battles with friends.", bestFor: "Basketball fans", genre: "Sports", modes: "Latest 2K · 1–4 players", accent: "#FF7A1A" },
+  { title: "Cricket 24", about: "Cricket on PS5 with bat-and-ball action across formats. Bring a friend and play a local match.", bestFor: "Cricket fans", genre: "Sports", modes: "Local versus", accent: "#2FD5A7" },
+  { title: "Rocket League", about: "Football with rocket-powered cars. Quick matches, simple to start, and hard to put down.", bestFor: "Short, competitive sessions", genre: "Sports", modes: "1–4 players", accent: "#2E9BFF" },
+  { title: "Tekken 8", about: "The 3D fighting series continues the Mishima family feud between Jin and Kazuya, with a big roster for head-to-head battles.", bestFor: "One-on-one rivalries", genre: "Fighting", modes: "1–2 players", accent: "#FF3D6E" },
+  { title: "Mortal Kombat 1", about: "A reborn Mortal Kombat universe shaped by Liu Kang, with brutal fights and a cinematic story mode.", bestFor: "Fighting game fans", genre: "Fighting", modes: "1–2 players", accent: "#FFB020" },
+  { title: "Street Fighter 6", about: "Classic and new fighters meet in fast one-on-one matches, plus a World Tour story mode.", bestFor: "Fighters of every skill level", genre: "Fighting", modes: "1–2 players", accent: "#FF4FD8" },
+  { title: "Gran Turismo 7", about: "A driving game built around car culture, with a large collection of cars and famous tracks.", bestFor: "Car lovers", genre: "Racing", modes: "1–2 players", accent: "#37B6FF" },
+  { title: "F1", about: "Race as the official F1 teams and drivers on real Grand Prix circuits.", bestFor: "Motorsport fans", genre: "Racing", modes: "Latest season · 1–2 players", accent: "#FF2A2A" },
+  { title: "Call of Duty", about: "Fast first-person action with a cinematic campaign and online multiplayer.", bestFor: "Shooter fans", genre: "Shooter", modes: "Campaign · Online", accent: "#9BE34B" },
+  { title: "Fortnite", about: "Drop into a 100-player battle royale, gather gear, build, and be the last one standing.", bestFor: "Online matches", genre: "Shooter", modes: "Battle royale · Online", accent: "#A66BFF" },
+  { title: "God of War Ragnarök", about: "Kratos and Atreus journey through the Nine Realms as Ragnarök approaches, in an emotional father-and-son story.", bestFor: "Epic story and big battles", story: true, genre: "Action adventure", modes: "Solo story", accent: "#7CC7FF" },
+  { title: "The Last of Us Part II", about: "Ellie’s story of revenge and its cost, set in a dangerous post-apocalyptic America.", bestFor: "Players who want a powerful, mature story", story: true, genre: "Action adventure", modes: "Solo story", accent: "#8FBF6A" },
+  { title: "Elden Ring", about: "Explore the Lands Between, a vast and dark fantasy world, and face some of gaming’s toughest bosses.", bestFor: "Players who love a challenge", story: true, genre: "Action adventure", modes: "Solo · Online co-op", accent: "#E0B84C" },
+  { title: "Red Dead Redemption 2", about: "Live as outlaw Arthur Morgan in 1899 as the Van der Linde gang falls apart at the end of the Wild West.", bestFor: "Long, immersive story sessions", story: true, genre: "Open world", modes: "Solo story", accent: "#E5533D" },
+  { title: "It Takes Two", about: "Cody and May are turned into dolls and must work together to get home. Every level is built for two players.", bestFor: "Couples and best friends", story: true, genre: "Co-op", modes: "2 players", accent: "#FF8AC4" },
+  { title: "Split Fiction", about: "Writers Mio and Zoe get trapped inside their own stories and need each other to escape. Built for two players.", bestFor: "Co-op with a friend", story: true, genre: "Co-op", modes: "2 players", accent: "#5CE1E6" },
+  { title: "Minecraft", about: "Build anything you can imagine, explore, and survive in a world made of blocks.", bestFor: "All ages and relaxed sessions", genre: "Co-op", modes: "1–4 players", accent: "#6FCF4A" },
+  { title: "Astro Bot", about: "A joyful platform adventure where Astro travels across colourful worlds to rescue his crew.", bestFor: "Kids, families, and anyone who wants fun", genre: "Co-op", modes: "Solo adventure", accent: "#4C8DFF" },
+  { title: "Cyberpunk 2077", about: "Play as V, a mercenary in Night City, chasing a one-of-a-kind implant with the digital ghost of Johnny Silverhand in your head.", bestFor: "Sci-fi and choice-driven stories", story: true, genre: "Open world", modes: "Solo story", accent: "#FCEE0A" },
+  { title: "Hogwarts Legacy", about: "Live as a Hogwarts student in the 1800s, learn spells, and explore the wizarding world in your own adventure.", bestFor: "Harry Potter fans", story: true, genre: "Open world", modes: "Solo story", accent: "#C9A24B" },
+  { title: "Horizon Forbidden West", about: "Aloy travels into a dangerous frontier full of giant machines to uncover why the world is dying.", bestFor: "Exploration and sci-fi adventure", story: true, genre: "Open world", modes: "Solo story", accent: "#FF7A45" },
+  { title: "Assassin’s Creed Shadows", about: "Play as shinobi Naoe and samurai Yasuke in feudal Japan, in two connected stories.", bestFor: "History and stealth action", story: true, genre: "Open world", modes: "Solo story", accent: "#D6423B" },
+  { title: "Ghost of Tsushima", about: "Samurai Jin Sakai fights to free his island from the Mongol invasion of 1274.", bestFor: "Samurai fans", story: true, genre: "Action adventure", modes: "Solo story", accent: "#E8E2C8" },
+  { title: "Final Fantasy VII Rebirth", about: "Cloud and his friends leave Midgar behind and head out into a huge world in this reimagined classic.", bestFor: "RPG fans", story: true, genre: "Action adventure", modes: "Solo story", accent: "#6FA8FF" },
+  { title: "Uncharted: Legacy of Thieves", about: "Treasure hunters Nathan Drake and Chloe Frazer chase lost fortunes in two cinematic adventures.", bestFor: "Movie-style action", story: true, genre: "Action adventure", modes: "Solo story", accent: "#E9A23B" },
+  { title: "Black Myth: Wukong", about: "Journey as the Destined One through a mythic China inspired by Journey to the West, with huge boss fights.", bestFor: "Mythology and hard boss battles", story: true, genre: "Action adventure", modes: "Solo story", accent: "#D8A24A" },
+  { title: "Resident Evil 4", about: "Agent Leon Kennedy is sent to a sinister village in Europe to rescue the president’s daughter.", bestFor: "Horror and action", story: true, genre: "Action", modes: "Solo story", accent: "#B3261E" },
+  { title: "Alan Wake 2", about: "A survival horror thriller following FBI agent Saga Anderson and writer Alan Wake as a dark story comes to life.", bestFor: "Horror and mystery", story: true, genre: "Action", modes: "Solo story", accent: "#7E9BC9" },
 ];
 
-export const gameGenres = ["All", "Football", "Sports", "Wrestling", "Fighting", "Racing", "Shooter", "Open world", "Action adventure", "Action", "Co-op"];
+export function gameSlug(title: string) {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f’']/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function isGameInGenre(game: Game, genre: string) {
+  return genre === "All" || (genre === "Story" ? Boolean(game.story) : game.genre === genre);
+}
+
+export const gameGenres = ["All", "Story", "Football", "Sports", "Wrestling", "Fighting", "Racing", "Shooter", "Open world", "Action adventure", "Action", "Co-op"];
 
 export const stations = [
   {
@@ -292,7 +316,7 @@ export const gallery = [
   { src: "/images/ps5-console.jpg", alt: "A PlayStation 5 console", tag: "Consoles" },
   { src: "/images/private-room.jpg", alt: "The private gaming room", tag: "Private room" },
   { src: "/images/crew-session.jpg", alt: "Friends playing in front of a wide screen", tag: "Gaming moments", wide: true },
-  { src: "/images/controller-glow.jpg", alt: "A controller in neon light", tag: "Setup" },
+  { src: "/images/controller-glow.jpg", alt: "A controller in neon light", tag: "Setup", wide: true },
 ] as const;
 
 export const founders = [

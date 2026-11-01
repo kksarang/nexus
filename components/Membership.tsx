@@ -48,15 +48,13 @@ export function Membership({ heading = true }: { heading?: boolean }) {
                     <h3 className="text-2xl text-paper uppercase">{item.label}</h3>
                     {best ? <span className="chip border-magenta/60 text-paper">Lowest per session</span> : null}
                   </div>
-                  <p className="mt-6 font-tech text-5xl leading-none text-paper">{formatRupees(each)}</p>
-                  <p className="mt-2 text-sm text-mist">
-                    per session <span className="ml-1 line-through">{formatRupees(prices.station)}</span>
-                  </p>
+                  <p data-plan-price className="mt-6 font-tech text-5xl leading-none text-paper">{formatRupees(item.rupees)}</p>
+                  <p className="mt-2 text-sm text-mist">for {length}</p>
                   {saved > 0 ? (
-                    <p className="mt-4 text-sm font-semibold text-[#3BFF9D]">You save {formatRupees(saved)}</p>
+                    <p className="mt-4 text-sm font-semibold text-[#3BFF9D]">You save {formatRupees(saved)} against walk-in hours</p>
                   ) : null}
                   <ul className="mt-5 grid flex-1 content-start gap-2.5 border-t border-white/10 pt-5">
-                    {[`${formatRupees(item.rupees)} total`, `${item.sessions} sessions on Stations 01 to 04`, `Valid for ${length}`].map((perk) => (
+                    {[`${item.sessions} sessions on Stations 01 to 04`, `${formatRupees(each)} per session, walk-in hour ${formatRupees(prices.station)}`, `Valid for ${length}`].map((perk) => (
                       <li key={perk} className="flex items-start gap-2 text-sm text-paper">
                         <Check size={16} className="mt-0.5 shrink-0 text-magenta" aria-hidden="true" />
                         {perk}

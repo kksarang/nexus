@@ -1,9 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { GameTileArt } from "@/components/GameTile";
-import { games } from "@/lib/site";
+import { gameSlug, games } from "@/lib/site";
 
-const featured = ["EA Sports FC", "WWE 2K", "GTA V", "Tekken 8", "Gran Turismo 7", "Marvel’s Spider-Man 2", "Call of Duty", "It Takes Two"];
+const featured = ["EA Sports FC", "WWE 2K", "GTA V", "Tekken 8", "Gran Turismo 7", "Marvel’s Spider-Man 2", "Cyberpunk 2077", "It Takes Two"];
 
 export function HomeGames() {
   const rail = featured.flatMap((title) => games.filter((game) => game.title === title));
@@ -24,7 +24,7 @@ export function HomeGames() {
         <ul className="game-rail mt-8 flex snap-x gap-3 overflow-x-auto pt-1 pb-2">
           {rail.map((game) => (
             <li key={game.title} className="w-44 shrink-0 snap-start sm:w-52">
-              <Link href="/games" className="game-tile-card bevel relative block aspect-[3/4] overflow-hidden border border-white/15" aria-label={game.title}>
+              <Link href={`/games/${gameSlug(game.title)}`} className="game-tile-card bevel relative block aspect-[3/4] overflow-hidden border border-white/15" aria-label={game.title}>
                 <GameTileArt game={game} />
               </Link>
             </li>

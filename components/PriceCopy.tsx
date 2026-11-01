@@ -15,7 +15,7 @@ export function RateChips() {
   return (
     <dl className="flex flex-wrap gap-2">
       {shown.map(([label, rupees]) => (
-        <div key={label} className="rounded-lg border border-white/10 bg-[#101624] px-3 py-2">
+        <div key={label} className="tile px-3 py-2">
           <dt className="text-xs text-mist">{label}</dt>
           <dd className="text-sm font-semibold text-paper">{formatRupees(rupees)} / hour</dd>
         </div>
