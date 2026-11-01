@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Membership } from "@/components/Membership";
+import { MembershipCompare } from "@/components/MembershipCompare";
 import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function MembershipPage() {
         Monthly, quarterly, or yearly plans for regulars on Stations 01 to 04. Pay and join at the counter.
       </PageHero>
       <Membership heading={false} />
+      <MembershipCompare />
     </main>
   );
 }

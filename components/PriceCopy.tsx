@@ -2,6 +2,8 @@
 
 import { formatRupees } from "@/lib/format";
 import { useLivePrices } from "@/components/useLivePrices";
+import { memberPlans } from "@/lib/prices";
+import { games } from "@/lib/site";
 
 export function RateChips() {
   const prices = useLivePrices();
@@ -33,15 +35,18 @@ export function StationsIntro() {
 
 export function HomeStats() {
   const prices = useLivePrices();
+  const lowest = Math.min(...memberPlans(prices).map((plan) => Math.round(plan.rupees / plan.sessions)));
   const shown = [
     ["06", "Gaming stations"],
     ["01", "Private room"],
+    [`${games.length}`, "Games"],
     [formatRupees(prices.station), "Per hour, from"],
+    [formatRupees(lowest), "Member session, from"],
     ["Panoor", "Kannur, Kerala"],
   ];
   return (
     <section className="border-y border-white/10 bg-navy/70">
-      <dl className="shell grid grid-cols-2 lg:grid-cols-4">
+      <dl className="shell grid grid-cols-2 gap-x-4 sm:grid-cols-3 xl:grid-cols-6">
         {shown.map(([value, label]) => (
           <div key={label} className="py-6 sm:py-8">
             <dd className="font-tech text-2xl text-paper sm:text-4xl">{value}</dd>

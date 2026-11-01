@@ -17,6 +17,11 @@ export function Membership({ heading = true }: { heading?: boolean }) {
         {heading ? (
         <SectionIntro
           eyebrow="Membership"
+          action={
+            <Link href="/membership" className="btn btn-secondary">
+              Compare plans
+            </Link>
+          }
           title={
             <>
               Monthly, quarterly, <span className="text-gradient">or yearly.</span>

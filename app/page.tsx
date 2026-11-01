@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/Hero";
 import { HomeDoors } from "@/components/HomeDoors";
+import { HomeGlance } from "@/components/HomeGlance";
 import { HomeGames } from "@/components/HomeGames";
 import { HomeSteps } from "@/components/HomeSteps";
+import { Membership } from "@/components/Membership";
 import { HomeStats } from "@/components/PriceCopy";
 
 export const metadata: Metadata = {
@@ -17,7 +19,9 @@ export default function HomePage() {
       <Hero />
       <HomeStats />
       <HomeDoors />
+      <Membership />
       <HomeGames />
+      <HomeGlance />
       <HomeSteps />
     </main>
   );
