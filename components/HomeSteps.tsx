@@ -10,7 +10,7 @@ const steps = [
 
 export function HomeSteps() {
   return (
-    <section className="border-t border-white/10 py-20 sm:py-24">
+    <section className="band py-16 sm:py-20">
       <div className="shell">
         <p className="eyebrow">How booking works</p>
         <ol className="mt-8 grid gap-8 md:grid-cols-3">

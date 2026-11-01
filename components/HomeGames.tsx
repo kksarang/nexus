@@ -8,7 +8,7 @@ const featured = ["EA Sports FC", "WWE 2K", "GTA V", "Tekken 8", "Gran Turismo 7
 export function HomeGames() {
   const rail = featured.flatMap((title) => games.filter((game) => game.title === title));
   return (
-    <section className="pb-20 sm:pb-28">
+    <section className="py-16 sm:py-20">
       <div className="shell">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

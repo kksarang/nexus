@@ -10,62 +10,60 @@ import { memberPlans } from "@/lib/prices";
 export function Membership({ heading = true }: { heading?: boolean }) {
   const prices = useLivePrices();
   const plans = memberPlans(prices);
+  const eachOf = (plan: (typeof plans)[number]) => (plan.sessions ? Math.round(plan.rupees / plan.sessions) : 0);
+  const lowest = Math.min(...plans.map(eachOf));
 
   return (
-    <section id="membership" className="py-20 sm:py-28">
+    <section id="membership" className={heading ? "band py-16 sm:py-20" : "py-16 sm:py-20"}>
       <div className="shell">
         {heading ? (
-        <SectionIntro
-          eyebrow="Membership"
-          action={
-            <Link href="/membership" className="btn btn-secondary">
-              Compare plans
-            </Link>
-          }
-          title={
-            <>
-              Monthly, quarterly, <span className="text-gradient">or yearly.</span>
-            </>
-          }
-        >
-          A walk-in PS5 hour is {formatRupees(prices.station)}. A plan covers Stations 01 to 04. The car simulator
-          stays {formatRupees(prices.simulator)} an hour and the private room stays {formatRupees(prices.privateRoom)}.
-        </SectionIntro>
+          <SectionIntro
+            eyebrow="Membership"
+            title={
+              <>
+                Play more. <span className="text-gradient">Pay less.</span>
+              </>
+            }
+            action={
+              <Link href="/membership" className="btn btn-secondary">
+                Compare plans
+              </Link>
+            }
+          >
+            A walk-in PS5 hour is {formatRupees(prices.station)}. A plan covers Stations 01 to 04. The car simulator
+            stays {formatRupees(prices.simulator)} an hour and the private room stays {formatRupees(prices.privateRoom)}.
+          </SectionIntro>
         ) : null}
 
-        <ul className={`${heading ? "mt-12" : ""} grid gap-5 lg:grid-cols-3`}>
+        <ul className={`${heading ? "mt-10" : ""} grid gap-4 lg:grid-cols-3`}>
           {plans.map((item) => {
-            const each = item.sessions ? Math.round(item.rupees / item.sessions) : 0;
+            const each = eachOf(item);
             const saved = prices.station * item.sessions - item.rupees;
-            const length = item.months === 1 ? "1 month" : item.months === 3 ? "3 months" : "12 months";
+            const length = item.months === 1 ? "1 month" : `${item.months} months`;
+            const best = each === lowest;
             return (
               <li key={item.id}>
-                <article className={`panel panel-hover flex h-full flex-col p-6 sm:p-8 ${item.id === "quarterly" ? "panel-featured" : ""}`}>
-                  <p className="font-display text-sm tracking-[0.18em] text-cyan uppercase">{item.label}</p>
-                  <p className="mt-3 font-tech text-5xl leading-none text-paper">{formatRupees(item.rupees)}</p>
-                  <p className="mt-2 text-sm text-mist">{item.sessions} sessions · {length} · {formatRupees(each)} each</p>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs text-mist">
-                      <span>Per session</span>
-                      <span>Walk-in {formatRupees(prices.station)}</span>
-                    </div>
-                    <div className="meter mt-1.5" aria-hidden="true">
-                      <span style={{ width: `${Math.min(100, (each / prices.station) * 100)}%` }} />
-                    </div>
+                <article className={`panel panel-hover relative flex h-full flex-col p-6 sm:p-8 ${best ? "panel-featured" : ""}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-2xl text-paper uppercase">{item.label}</h3>
+                    {best ? <span className="chip border-magenta/60 text-paper">Lowest per session</span> : null}
                   </div>
-                  <ul className="mt-6 grid flex-1 gap-3">
-                    {[
-                      `${item.sessions} plays on Stations 01 to 04`,
-                      `Valid for ${length} from the start date`,
-                      saved > 0 ? `Saves ${formatRupees(saved)} against walk-in hours` : "Stations 01 to 04",
-                    ].map((perk) => (
+                  <p className="mt-6 font-tech text-5xl leading-none text-paper">{formatRupees(each)}</p>
+                  <p className="mt-2 text-sm text-mist">
+                    per session <span className="ml-1 line-through">{formatRupees(prices.station)}</span>
+                  </p>
+                  {saved > 0 ? (
+                    <p className="mt-4 text-sm font-semibold text-[#3BFF9D]">You save {formatRupees(saved)}</p>
+                  ) : null}
+                  <ul className="mt-5 grid flex-1 content-start gap-2.5 border-t border-white/10 pt-5">
+                    {[`${formatRupees(item.rupees)} total`, `${item.sessions} sessions on Stations 01 to 04`, `Valid for ${length}`].map((perk) => (
                       <li key={perk} className="flex items-start gap-2 text-sm text-paper">
-                        <Check size={16} className="mt-0.5 shrink-0 text-cyan" aria-hidden="true" />
+                        <Check size={16} className="mt-0.5 shrink-0 text-magenta" aria-hidden="true" />
                         {perk}
                       </li>
                     ))}
                   </ul>
-                  <Link href={`/book?plan=${item.id}`} className="btn btn-primary mt-8 w-full">
+                  <Link href={`/book?plan=${item.id}`} className={`btn mt-7 w-full ${best ? "btn-primary" : "btn-secondary"}`}>
                     Ask to join
                   </Link>
                 </article>
@@ -73,7 +71,7 @@ export function Membership({ heading = true }: { heading?: boolean }) {
             );
           })}
         </ul>
-        <p className="mt-6 text-sm text-mist">Pay and join at the counter. Changing a plan price does not change members who already joined.</p>
+        <p className="mt-5 text-sm text-mist">Pay and join at the counter. Changing a plan price does not change members who already joined.</p>
       </div>
     </section>
   );

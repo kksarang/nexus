@@ -11,7 +11,7 @@ const doors = [
 
 export function HomeDoors() {
   return (
-    <section className="py-20 sm:py-28">
+    <section className="py-16 sm:py-20">
       <div className="shell">
         <p className="eyebrow">Explore Nexus</p>
         <h2 className="mt-5 max-w-3xl text-[2.2rem] text-balance text-paper uppercase sm:text-5xl">
