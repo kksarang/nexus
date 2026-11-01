@@ -7,7 +7,7 @@ import { games } from "@/lib/site";
 export const metadata: Metadata = {
   title: "PS5 Game Library",
   description:
-    "Play the latest PS5 games at Nexus Playzone, a gaming station in Panoor for Thalassery and Kannur.",
+    "Play the latest PS5 games at Nexus Playzone, a gaming cafe in Panoor for Thalassery, Koothuparamba, and Kannur.",
   alternates: { canonical: "/games" },
 };
 

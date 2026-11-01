@@ -40,7 +40,7 @@ const michroma = Michroma({
   display: "swap",
 });
 
-const title = "Nexus Playzone | PS5 Gaming Station in Panoor, Thalassery and Kannur";
+const title = "Nexus Playzone | PS5 Gaming Cafe in Panoor, Thalassery and Koothuparamba";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -56,7 +56,13 @@ export const metadata: Metadata = {
     "gaming station in Thalassery",
     "PS5 gaming in Thalassery",
     "game station in Kannur",
+    "best place to play in Panoor",
+    "game world in Panoor",
+    "game zone in Panoor",
     "gaming cafe in Panoor",
+    "gaming cafe in Koothuparamba",
+    "PS5 gaming in Koothuparamba",
+    "game zone near Thalassery",
     "PS5 cafe in Thalassery",
     "PS5 gaming in Kannur",
     "Panoor gaming",

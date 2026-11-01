@@ -31,7 +31,7 @@ export function Hero() {
           <span className="tagline-win">Level Up</span>
         </h1>
         <p className="boot mt-3 max-w-xl text-base leading-relaxed text-paper/85" style={{ "--boot": 3 } as CSSProperties}>
-          A PS5 gaming station in Panoor for Thalassery and Kannur. Six gaming stations, including a private room, and a real game experience with your people.
+          A PS5 gaming cafe in Panoor for Thalassery, Koothuparamba, and Kannur. Six gaming stations, including a private room, and a real game experience with your people.
         </p>
         <div className="boot mt-6 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row" style={{ "--boot": 4 } as CSSProperties}>
           <BookButton className="w-full sm:w-auto">Book your session</BookButton>

@@ -1,4 +1,4 @@
-import { founders, getSiteUrl, site } from "@/lib/site";
+import { founders, getSiteUrl, servedAreas, site } from "@/lib/site";
 
 export function JsonLd() {
   const url = getSiteUrl();
@@ -19,7 +19,7 @@ export function JsonLd() {
       addressRegion: "Kerala",
       addressCountry: "IN",
     },
-    areaServed: ["Panoor", "Thalassery", "Kannur"],
+    areaServed: servedAreas,
     hasMap: site.maps,
     founder: founders.map((founder) => ({
       "@type": "Person",

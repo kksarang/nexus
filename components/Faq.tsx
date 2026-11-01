@@ -13,7 +13,7 @@ export function Faq() {
     ["Can I ask for a specific game?", "Yes. Tell us in the booking request and we will have it ready. If it is not on our list, ask us about it."],
     ["How does membership work?", "Plans are monthly, quarterly, or yearly and cover Stations 01 to 04. You pay and join at the counter."],
     ["How do rewards work?", "One point for every 60 paid minutes. Ten points in a Monday to Sunday week unlocks 30 minutes of free play, marked used at the counter."],
-    ["Where are you?", `We are in ${site.location}, a short trip from Thalassery.`],
+    ["Where are you?", `We are in ${site.location}, and players come to us from Thalassery, Koothuparamba, and nearby towns.`],
   ];
   return (
     <section className="pb-20 sm:pb-28">

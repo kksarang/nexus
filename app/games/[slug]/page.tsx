@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!game) return {};
   return {
     title: `${game.title} on PS5`,
-    description: `Play ${game.title} on PS5 at Nexus Playzone in Panoor, near Thalassery and Kannur. ${game.about}`,
+    description: `Play ${game.title} on PS5 at Nexus Playzone in Panoor, near Thalassery and Koothuparamba. ${game.about}`,
     alternates: { canonical: `/games/${slug}` },
   };
 }
